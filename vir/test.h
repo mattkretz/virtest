@@ -55,6 +55,11 @@ template<typename T> struct isEqualType<T, T>
     operator bool() const { return true; }
 };
 
+static inline void printPass()
+{
+    std::cout << AnsiColor::green << " PASS: " << AnsiColor::normal;
+}
+
 class _UnitTest_Failure
 {
 };
@@ -180,7 +185,8 @@ void _UnitTest_Global_Object::runTestInt(testFunction fun, const char *name)
             std::cout << _unittest_fail() << "┕ " << name << std::endl;
             ++failedTests;
         } else {
-            std::cout << " PASS: " << name;
+            printPass();
+            std::cout << name;
             if (findMaximumDistance && maximumDistance > 0.) {
                 std::cout << " with a maximal distance of " << maximumDistance << " to the reference.";
             }
@@ -479,7 +485,7 @@ template<> inline void _UnitTest_Compare::writePlotData(std::fstream &file, Vc::
 class ADD_PASS
 {
     public:
-        ADD_PASS() { ++_unit_test_global.passedTests; std::cout << " PASS: "; }
+        ADD_PASS() { ++_unit_test_global.passedTests; printPass(); }
         ~ADD_PASS() { std::cout << std::endl; }
         template<typename T> ADD_PASS &operator<<(const T &x) { std::cout << x; return *this; }
 };
