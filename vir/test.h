@@ -94,17 +94,17 @@ class _UnitTest_Global_Object
 
         ~_UnitTest_Global_Object()
         {
-            if (m_finalized) {
-                // on windows std::exit will call the dtor again, leading to infinite recursion
-                return;
-            }
+        }
+
+        int finalize()
+        {
             if (plotFile.is_open()) {
                 plotFile.flush();
                 plotFile.close();
             }
-            std::cout << "\n Testing done. " << passedTests << " tests passed. " << failedTests << " tests failed." << std::endl;
             m_finalized = true;
-            std::exit(failedTests);
+            std::cout << "\n Testing done. " << passedTests << " tests passed. " << failedTests << " tests failed." << std::endl;
+            return failedTests;
         }
 
         void runTestInt(testFunction fun, const char *name);
@@ -540,5 +540,14 @@ static void unittest_assert(bool cond, const char *code, const char *file, int l
         return; \
     } \
     _unit_test_global.expect_assert_failure = false
+
+void testmain();
+
+int main(int argc, char **argv)
+{
+    initTest(argc, argv);
+    testmain();
+    return _unit_test_global.finalize();
+}
 
 #endif // UNITTEST_H
