@@ -41,18 +41,19 @@ static void unittest_assert(bool cond, const char *code, const char *file, int l
 #define VC_ASSERT(cond) UnitTest::unittest_assert(cond, #cond, __FILE__, __LINE__);
 
 #include <Vc/Vc>
-#include <Vc/type_traits>
-#include <iostream>
-#include <sstream>
-#include <iomanip>
-#include <fstream>
+#include <Vc/support.h>
+#include "detail/ulp.h"
+#include <cmath>
 #include <cstdlib>
 #include <cstring>
-#include <cmath>
-#include "detail/ulp.h"
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <random>
+#include <sstream>
+#include <tuple>
 #include <typeinfo>
 #include <vector>
-#include <tuple>
 #include <common/macros.h>
 
 #ifdef DOXYGEN
