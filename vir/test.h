@@ -1119,6 +1119,14 @@ void unittest_assert(bool cond, const char *code, const char *file, int line)
 
 // typeToString {{{1
 template <typename T> inline std::string typeToString();
+// std::integral_constant<T, N> {{{2
+template <typename T, T N>
+inline std::string typeToString_impl(std::integral_constant<T, N> const &)
+{
+    std::stringstream s;
+    s << "integral_constant<" << N << '>';
+    return s.str();
+}
 // simdarray to string {{{2
 template <typename T, std::size_t N, typename V, std::size_t M>
 inline std::string typeToString_impl(Vc::simdarray<T, N, V, M> const &)
