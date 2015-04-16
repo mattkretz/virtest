@@ -304,6 +304,7 @@ public:
     float float_fuzzyness;
     double double_fuzzyness;
     const char *only_name;
+    bool vim_lines = false;
     std::fstream plotFile;
 
 private:
@@ -345,7 +346,7 @@ void initTest(int argc, char **argv)  //{{{1
     for (int i = 1; i < argc; ++i) {
         if (0 == std::strcmp(argv[i], "--help") || 0 == std::strcmp(argv[i], "-h")) {
             std::cout << "Usage: " << argv[0]
-                      << " [-h|--help] [--only <testname>] [--maxdist] [--plotdist <plot.dat>]\n";
+                      << " [-h|--help] [--only <testname>] [-v|--vim] [--maxdist] [--plotdist <plot.dat>]\n";
             exit(0);
         }
         if (0 == std::strcmp(argv[i], "--only") && i + 1 < argc) {
@@ -355,6 +356,9 @@ void initTest(int argc, char **argv)  //{{{1
         } else if (0 == std::strcmp(argv[i], "--plotdist") && i + 1 < argc) {
             global_unit_test_object_.plotFile.open(argv[i + 1], std::ios_base::out);
             global_unit_test_object_.plotFile << "# reference\tdistance\n";
+        } else if (0 == std::strcmp(argv[i], "--vim") ||
+                   0 == std::strcmp(argv[i], "-v")) {
+            global_unit_test_object_.vim_lines = true;
         }
     }
 }
@@ -414,7 +418,14 @@ void UnitTester::runTestInt(TestFunction fun, const char *name)  //{{{1
                 std::cout << failString() << "│ with a maximal distance of " << maximumDistance
                           << " to the reference (mean: " << meanDistance / meanCount << ").\n";
             }
-            std::cout << failString() << "┕ " << name << std::endl;
+            std::cout << failString();
+            if (!vim_lines) {
+                std::cout << "┕ ";
+            }
+            std::cout << name << std::endl;
+            if (vim_lines) {
+                std::cout << '\n';
+            }
             ++failedTests;
         } else {
             UnitTest::printPass();
@@ -610,7 +621,6 @@ public:
         if (VC_IS_UNLIKELY(m_failed)) {
             printFirst();
             printPosition(_file, _line);
-            print(":\n");
             print(_a);
             print(" (");
             print(std::setprecision(10));
@@ -655,7 +665,7 @@ public:
         if (VC_IS_UNLIKELY(m_failed)) {
             printFirst();
             printPosition(filename, line);
-            print(":\nMEMCOMPARE(");
+            print("MEMCOMPARE(");
             print(variableNameA);
             print(", ");
             print(variableNameB);
@@ -685,7 +695,6 @@ public:
         if (VC_IS_UNLIKELY(m_failed)) {
             printFirst();
             printPosition(_file, _line);
-            print(":\n");
             print(_a);
             print(" (");
             print(std::setprecision(10));
@@ -714,7 +723,6 @@ public:
         if (VC_IS_UNLIKELY(m_failed)) {
             printFirst();
             printPosition(_file, _line);
-            print(":\n");
             print(_a);
             print(" (");
             print(std::setprecision(10));
@@ -749,7 +757,6 @@ public:
         if (VC_IS_UNLIKELY(m_failed)) {
             printFirst();
             printPosition(_file, _line);
-            print(":\n");
             print(_a);
             print(" (");
             print(std::setprecision(10));
@@ -792,7 +799,6 @@ public:
         if (VC_IS_UNLIKELY(m_failed)) {
             printFirst();
             printPosition(_file, _line);
-            print(":\n");
             print(_a);
             print(" (");
             print(std::setprecision(10));
@@ -835,7 +841,6 @@ public:
         if (VC_IS_UNLIKELY(m_failed)) {
             printFirst();
             printPosition(_file, _line);
-            print(": ");
             print(cond);
         }
     }
@@ -845,7 +850,6 @@ public:
     {
         printFirst();
         printPosition(_file, _line);
-        print(":\n");
     }
 
     // stream operators {{{2
@@ -928,8 +932,14 @@ private:
         }
         std::cout << s.get();
     }
+    // printFirst {{{2
+    static void printFirst()
+    {
+        if (!global_unit_test_object_.vim_lines) {
+            std::cout << failString() << "┍ ";
+        }
+    }
     // print overloads {{{2
-    static void printFirst() { std::cout << failString() << "┍ "; }
     template <typename T> static inline void print(const T &x) { std::cout << x; }
     static void print(const std::type_info &x)
     {
@@ -951,12 +961,20 @@ private:
         const char *pos = 0;
         if (0 != (pos = std::strchr(str, '\n'))) {
             if (pos == str) {
-                std::cout << '\n' << failString() << "│ " << &str[1];
+                std::cout << '\n' << failString();
+                if (!global_unit_test_object_.vim_lines) {
+                    std::cout << "│ ";
+                }
+                print(&str[1]);
             } else {
                 char *left = strdup(str);
                 left[pos - str] = '\0';
-                std::cout << left << '\n' << failString() << "│ " << &pos[1];
+                std::cout << left << '\n' << failString();
+                if (!global_unit_test_object_.vim_lines) {
+                    std::cout << "│ ";
+                }
                 free(left);
+                print(&pos[1]);
             }
         } else {
             std::cout << str;
@@ -965,7 +983,10 @@ private:
     static void print(const char ch)
     {
         if (ch == '\n') {
-            std::cout << '\n' << failString() << "│ ";
+            std::cout << '\n' << failString();
+            if (!global_unit_test_object_.vim_lines) {
+                std::cout << "│ ";
+            }
         } else {
             std::cout << ch;
         }
@@ -981,8 +1002,14 @@ private:
     // printPosition {{{2
     void printPosition(const char *_file, int _line)
     {
-        std::cout << "at " << _file << ':' << _line << " (0x" << std::hex << m_ip << std::dec
-                  << ')';
+        if (global_unit_test_object_.vim_lines) {
+            std::cout << _file << ':' << _line << ": (0x" << std::hex << m_ip << std::dec
+                      << "): ";
+        } else {
+            std::cout << "at " << _file << ':' << _line << " (0x" << std::hex << m_ip
+                      << std::dec << ')';
+            print("):\n");
+        }
     }
     template <typename T>
     static inline void writePlotData(std::fstream &file,
