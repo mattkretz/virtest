@@ -31,7 +31,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <Vc/Vc>
 #include <Vc/limits>
 
-#ifdef VC_MSVC
+#ifdef Vc_MSVC
 namespace std
 {
     static inline bool isnan(float  x) { return _isnan(x); }

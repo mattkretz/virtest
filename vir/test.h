@@ -30,14 +30,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "typelist.h"
 
-#ifdef VC_ASSERT
+#ifdef Vc_ASSERT
 #error "include unittest.h before any Vc header"
 #endif
 namespace UnitTest
 {
 static void unittest_assert(bool cond, const char *code, const char *file, int line);
 }  // namespace UnitTest
-#define VC_ASSERT(cond) UnitTest::unittest_assert(cond, #cond, __FILE__, __LINE__);
+#define Vc_ASSERT(cond) UnitTest::unittest_assert(cond, #cond, __FILE__, __LINE__);
 
 #include <Vc/Vc>
 #include <Vc/support.h>
@@ -463,7 +463,7 @@ template <typename T, typename = Vc::enable_if<!Vc::Traits::is_simd_vector<T>::v
 T ulpDiffToReferenceWrapper(T a, T b)
 {
     const T diff = ulpDiffToReference(a, b);
-    if (VC_IS_UNLIKELY(global_unit_test_object_.findMaximumDistance)) {
+    if (Vc_IS_UNLIKELY(global_unit_test_object_.findMaximumDistance)) {
         global_unit_test_object_.maximumDistance =
             std::max<double>(std::abs(diff), global_unit_test_object_.maximumDistance);
         global_unit_test_object_.meanDistance += std::abs(diff);
@@ -475,7 +475,7 @@ template <typename T, typename = Vc::enable_if<Vc::Traits::is_simd_vector<T>::va
 T ulpDiffToReferenceWrapper(const T &a, const T &b)
 {
     const T diff = ulpDiffToReference(a, b);
-    if (VC_IS_UNLIKELY(global_unit_test_object_.findMaximumDistance)) {
+    if (Vc_IS_UNLIKELY(global_unit_test_object_.findMaximumDistance)) {
         global_unit_test_object_.maximumDistance =
             std::max<double>(Vc::abs(diff).max(), global_unit_test_object_.maximumDistance);
         global_unit_test_object_.meanDistance += Vc::abs(diff).sum();
@@ -602,7 +602,7 @@ public:
         typename std::enable_if<Vc::Traits::has_equality_operator<T1, T2>::value, int>::type _line)
         : m_ip(getIp()), m_failed(!unittest_compareHelper(a, b))
     {
-        if (VC_IS_UNLIKELY(m_failed)) {
+        if (Vc_IS_UNLIKELY(m_failed)) {
             printFirst();
             printPosition(_file, _line);
             print(_a);
@@ -646,7 +646,7 @@ public:
         static_assert(
             sizeof(T1) == sizeof(T2),
             "MEMCOMPARE requires both of its arguments to have the same size (equal sizeof)");
-        if (VC_IS_UNLIKELY(m_failed)) {
+        if (Vc_IS_UNLIKELY(m_failed)) {
             printFirst();
             printPosition(filename, line);
             print("MEMCOMPARE(");
@@ -676,7 +676,7 @@ public:
                                        NoEq)
         : m_ip(getIp()), m_failed(!unittest_compareHelper(a, b))
     {
-        if (VC_IS_UNLIKELY(m_failed)) {
+        if (Vc_IS_UNLIKELY(m_failed)) {
             printFirst();
             printPosition(_file, _line);
             print(_a);
@@ -704,7 +704,7 @@ public:
                                        Fuzzy)
         : m_ip(getIp()), m_failed(!unittest_fuzzyCompareHelper(a, b))
     {
-        if (VC_IS_UNLIKELY(m_failed)) {
+        if (Vc_IS_UNLIKELY(m_failed)) {
             printFirst();
             printPosition(_file, _line);
             print(_a);
@@ -738,7 +738,7 @@ public:
                                     ET error)
         : m_ip(getIp()), m_failed(absoluteErrorTest(a, b, error))
     {
-        if (VC_IS_UNLIKELY(m_failed)) {
+        if (Vc_IS_UNLIKELY(m_failed)) {
             printFirst();
             printPosition(_file, _line);
             print(_a);
@@ -780,7 +780,7 @@ public:
                                     ET error)
         : m_ip(getIp()), m_failed(relativeErrorTest(a, b, error))
     {
-        if (VC_IS_UNLIKELY(m_failed)) {
+        if (Vc_IS_UNLIKELY(m_failed)) {
             printFirst();
             printPosition(_file, _line);
             print(_a);
@@ -822,7 +822,7 @@ public:
     Vc_ALWAYS_INLINE Compare(bool good, const char *cond, const char *_file, int _line)
         : m_ip(getIp()), m_failed(!good)
     {
-        if (VC_IS_UNLIKELY(m_failed)) {
+        if (Vc_IS_UNLIKELY(m_failed)) {
             printFirst();
             printPosition(_file, _line);
             print(cond);
@@ -839,7 +839,7 @@ public:
     // stream operators {{{2
     template <typename T> Vc_ALWAYS_INLINE const Compare &operator<<(const T &x) const
     {
-        if (VC_IS_UNLIKELY(m_failed)) {
+        if (Vc_IS_UNLIKELY(m_failed)) {
             print(x);
         }
         return *this;
@@ -847,7 +847,7 @@ public:
 
     Vc_ALWAYS_INLINE const Compare &operator<<(const char *str) const
     {
-        if (VC_IS_UNLIKELY(m_failed)) {
+        if (Vc_IS_UNLIKELY(m_failed)) {
             print(str);
         }
         return *this;
@@ -855,7 +855,7 @@ public:
 
     Vc_ALWAYS_INLINE const Compare &operator<<(const char ch) const
     {
-        if (VC_IS_UNLIKELY(m_failed)) {
+        if (Vc_IS_UNLIKELY(m_failed)) {
             print(ch);
         }
         return *this;
@@ -863,7 +863,7 @@ public:
 
     Vc_ALWAYS_INLINE const Compare &operator<<(bool b) const
     {
-        if (VC_IS_UNLIKELY(m_failed)) {
+        if (Vc_IS_UNLIKELY(m_failed)) {
             print(b);
         }
         return *this;
@@ -876,7 +876,7 @@ public:
         noexcept(false)
 #endif
     {
-        if (VC_IS_UNLIKELY(m_failed)) {
+        if (Vc_IS_UNLIKELY(m_failed)) {
             printLast();
         }
     }
@@ -886,7 +886,7 @@ private:
     static Vc_ALWAYS_INLINE size_t getIp()  //{{{2
     {
         size_t _ip;
-#ifdef VC_GNU_ASM
+#ifdef Vc_GNU_ASM
 #ifdef __x86_64__
         asm volatile("lea 0(%%rip),%0" : "=r"(_ip));
 #else
@@ -1003,13 +1003,13 @@ private:
     }
     template <typename T>
     static inline void writePlotData(std::fstream &file,
-                                     VC_ALIGNED_PARAMETER(T) a,
-                                     VC_ALIGNED_PARAMETER(T) b);
+                                     Vc_ALIGNED_PARAMETER(T) a,
+                                     Vc_ALIGNED_PARAMETER(T) b);
     template <typename T>
-    static inline void printFuzzyInfo(VC_ALIGNED_PARAMETER(T), VC_ALIGNED_PARAMETER(T));
+    static inline void printFuzzyInfo(Vc_ALIGNED_PARAMETER(T), Vc_ALIGNED_PARAMETER(T));
     template <typename T>
-    static inline void printFuzzyInfoImpl(std::true_type, VC_ALIGNED_PARAMETER(T) a,
-                                          VC_ALIGNED_PARAMETER(T) b, double fuzzyness)
+    static inline void printFuzzyInfoImpl(std::true_type, Vc_ALIGNED_PARAMETER(T) a,
+                                          Vc_ALIGNED_PARAMETER(T) b, double fuzzyness)
     {
         print("\ndistance: ");
         print(ulpDiffToReferenceSigned(a, b));
@@ -1018,8 +1018,8 @@ private:
         print(" ulp");
     }
     template <typename T>
-    static inline void printFuzzyInfoImpl(std::false_type, VC_ALIGNED_PARAMETER(T),
-                                          VC_ALIGNED_PARAMETER(T), double)
+    static inline void printFuzzyInfoImpl(std::false_type, Vc_ALIGNED_PARAMETER(T),
+                                          Vc_ALIGNED_PARAMETER(T), double)
     {
     }
     // member variables {{{2
@@ -1028,7 +1028,7 @@ private:
 };
 // printFuzzyInfo specializations for float and double {{{1
 template <typename T>
-inline void Compare::printFuzzyInfo(VC_ALIGNED_PARAMETER(T) a, VC_ALIGNED_PARAMETER(T) b)
+inline void Compare::printFuzzyInfo(Vc_ALIGNED_PARAMETER(T) a, Vc_ALIGNED_PARAMETER(T) b)
 {
   printFuzzyInfoImpl(std::integral_constant<bool, Vc::is_floating_point<T>::value>(), a,
                      b,
@@ -1037,22 +1037,22 @@ inline void Compare::printFuzzyInfo(VC_ALIGNED_PARAMETER(T) a, VC_ALIGNED_PARAME
                          : global_unit_test_object_.double_fuzzyness);
 }
 template <typename T>
-static inline void writePlotDataImpl(std::true_type, std::fstream &file, VC_ALIGNED_PARAMETER(T) ref,
-                       VC_ALIGNED_PARAMETER(T) dist)
+static inline void writePlotDataImpl(std::true_type, std::fstream &file, Vc_ALIGNED_PARAMETER(T) ref,
+                       Vc_ALIGNED_PARAMETER(T) dist)
 {
     for (size_t i = 0; i < T::Size; ++i) {
         file << std::setprecision(12) << ref[i] << "\t" << dist[i] << "\n";
     }
 }
 template <typename T>
-static inline void writePlotDataImpl(std::false_type, std::fstream &file, VC_ALIGNED_PARAMETER(T) ref,
-                       VC_ALIGNED_PARAMETER(T) dist)
+static inline void writePlotDataImpl(std::false_type, std::fstream &file, Vc_ALIGNED_PARAMETER(T) ref,
+                       Vc_ALIGNED_PARAMETER(T) dist)
 {
     file << std::setprecision(12) << ref << "\t" << dist << "\n";
 }
 template <typename T>
-inline void Compare::writePlotData(std::fstream &file, VC_ALIGNED_PARAMETER(T) a,
-                                   VC_ALIGNED_PARAMETER(T) b)
+inline void Compare::writePlotData(std::fstream &file, Vc_ALIGNED_PARAMETER(T) a,
+                                   Vc_ALIGNED_PARAMETER(T) b)
 {
     const T ref = b;
     const T dist = ulpDiffToReferenceSigned(a, b);
@@ -1356,7 +1356,7 @@ public:
 template <template <typename V> class TestFunctor, typename... TestTypes>
 class Test2 : public Test2Impl<TestFunctor, 0, sizeof...(TestTypes), TestTypes...>
 {
-#ifdef VC_ICC
+#ifdef Vc_ICC
 //#warning "ICC does not fully implement the current C++ standard (yet). The workaround may be suboptimal/wrong."
 public:
     explicit Test2(const std::string &name) : Test2Impl<TestFunctor, 0, sizeof...(TestTypes), TestTypes...>(name) {}
@@ -1368,7 +1368,7 @@ template <template <typename V> class TestFunctor, typename... TestTypes>
 class Test2<TestFunctor, Typelist<TestTypes...>>
     : public Test2Impl<TestFunctor, 0, sizeof...(TestTypes), TestTypes...>
 {
-#ifdef VC_ICC
+#ifdef Vc_ICC
 //#warning "ICC does not fully implement the current C++ standard (yet). The workaround may be suboptimal/wrong."
 public:
     explicit Test2(const std::string &name) : Test2Impl<TestFunctor, 0, sizeof...(TestTypes), TestTypes...>(name) {}
