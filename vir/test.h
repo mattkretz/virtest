@@ -1363,17 +1363,6 @@ UnitTest::Test2<F, Typelist...> hackTypelist(void (*)(Typelist...));
 //}}}1
 }  // namespace UnitTest
 // TEST_BEGIN / TEST_END / TEST macros {{{1
-#define REAL_VECTORS                                                                     \
-    Vc::double_v, Vc::float_v
-#define INT_VECTORS                                                                      \
-    Vc::int_v, Vc::ushort_v, Vc::uint_v, Vc::short_v
-#define ALL_VECTORS REAL_VECTORS, INT_VECTORS
-#define SIMD_REAL_ARRAYS(N_) Vc::SimdArray<double, N_>, Vc::SimdArray<float, N_>
-#define SIMD_INT_ARRAYS(N_)                                                              \
-    Vc::SimdArray<int, N_>, Vc::SimdArray<unsigned short, N_>,                           \
-        Vc::SimdArray<unsigned int, N_>, Vc::SimdArray<short, N_>
-#define SIMD_ARRAYS(N_) SIMD_REAL_ARRAYS(N_), SIMD_INT_ARRAYS(N_)
-
 #ifdef UNITTEST_ONLY_XTEST
 #define TEST_ALL_V(V_, fun_) template <typename V_> void fun_()
 #define XTEST_ALL_V(V_, fun_)                                                            \
