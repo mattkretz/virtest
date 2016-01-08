@@ -1252,7 +1252,11 @@ template <typename... Ts> Typelist<Ts...> hackTypelist(void (*)(Typelist<Ts...>)
 #define TEST_CATCH(name_, exception_) REAL_TEST_CATCH(name_, exception_)
 #endif
 
-int main(int argc, char **argv)  //{{{1
+int
+#ifdef Vc_MSVC
+__cdecl
+#endif
+main(int argc, char **argv)  //{{{1
 {
     UnitTest::initTest(argc, argv);
     UnitTest::runAll();
