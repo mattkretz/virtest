@@ -25,5 +25,49 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 }}}*/
 
+#include <limits>
+#include <type_traits>
+
+template <typename T, typename F>
+inline typename std::enable_if<std::is_floating_point<T>::value>::type
+iterateNumericRange(F &&f)
+{
+    using L = std::numeric_limits<T>;
+    constexpr int nsteps = 17;
+    const T step = L::max() / nsteps;
+    for (int i = 0; i < nsteps; ++i) {
+        f(T(L::lowest() + i * step));
+    }
+    for (int i = 0; i < nsteps; ++i) {
+        f(T(L::max() - i * step));
+    }
+    f(T(-1));
+    f(-L::min());
+    f(-L::denorm_min());
+    f(T(0));
+    f(L::denorm_min());
+    f(L::min());
+    f(T(1));
+}
+
+template <typename T, typename F>
+inline typename std::enable_if<std::is_integral<T>::value>::type iterateNumericRange(
+    F &&f)
+{
+    using L = std::numeric_limits<T>;
+    constexpr int nsteps = 17;
+    const T step = L::max() / nsteps;
+    for (int i = 0; i < nsteps; ++i) {
+        f(T(L::max() - i * step));
+    }
+    f(T(1));
+    f(T(0));
+    if (std::is_signed<T>::value) {
+        f(T(-1));
+        for (int i = 0; i < nsteps; ++i) {
+            f(T(L::min() + i * step));
+        }
+    }
+}
 
 // vim: foldmethod=marker
