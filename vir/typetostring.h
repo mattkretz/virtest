@@ -39,14 +39,14 @@ template <typename T> inline std::string typeToString();
 
 // std::array<T, N> {{{2
 template <typename T, std::size_t N>
-inline std::string typeToString_impl(std::array<T, N> const &)
+inline std::string typeToString_impl(std::array<T, N> *)
 {
     std::stringstream s;
     s << "array<" << typeToString<T>() << ", " << N << '>';
     return s.str();
 }
 // std::vector<T> {{{2
-template <typename T> inline std::string typeToString_impl(std::vector<T> const &)
+template <typename T> inline std::string typeToString_impl(std::vector<T> *)
 {
     std::stringstream s;
     s << "vector<" << typeToString<T>() << '>';
@@ -54,17 +54,16 @@ template <typename T> inline std::string typeToString_impl(std::vector<T> const 
 }
 // std::integral_constant<T, N> {{{2
 template <typename T, T N>
-inline std::string typeToString_impl(std::integral_constant<T, N> const &)
+inline std::string typeToString_impl(std::integral_constant<T, N> *)
 {
     std::stringstream s;
     s << "integral_constant<" << N << '>';
     return s.str();
 }
-// SimdArray to string {{{2
 
 // template parameter pack to a comma separated string {{{2
 template <typename T0, typename... Ts>
-std::string typeToString_impl(Typelist<T0, Ts...> const &)
+std::string typeToString_impl(Typelist<T0, Ts...> *)
 {
     std::stringstream s;
     s << '{' << typeToString<T0>();
@@ -80,10 +79,9 @@ std::string typeToString_impl(Typelist<T0, Ts...> const &)
     s << '}';
     return s.str();
 }
-// Vc::<Impl>::Vector<T> to string {{{2
 
 // generic fallback (typeid::name) {{{2
-template <typename T> inline std::string typeToString_impl(T const &)
+template <typename T> inline std::string typeToString_impl(T *)
 {
 #ifdef HAVE_CXX_ABI_H
     char buf[1024];
@@ -95,7 +93,7 @@ template <typename T> inline std::string typeToString_impl(T const &)
 #endif
 }
 // typeToString specializations {{{2
-template <typename T> inline std::string typeToString() { return typeToString_impl(T()); }
+template <typename T> inline std::string typeToString() { using tag = T *; return typeToString_impl(tag()); }
 template <> inline std::string typeToString<void>() { return ""; }
 template <> inline std::string typeToString<long double>() { return "ldoubl"; }
 template <> inline std::string typeToString<double>() { return "double"; }
