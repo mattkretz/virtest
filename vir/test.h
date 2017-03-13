@@ -181,8 +181,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * The allowed distance can be modified by calling:
  * \code
- * UnitTest::setFuzzyness<float>(4);
- * UnitTest::setFuzzyness<double>(7);
+ * vir::test::setFuzzyness<float>(4);
+ * vir::test::setFuzzyness<double>(7);
  * \endcode
  *
  * ### ulp
@@ -233,7 +233,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #else
 
-namespace UnitTest
+namespace vir
+{
+namespace test
 {
 // using statements {{{1
 using std::vector;
@@ -403,7 +405,7 @@ void UnitTester::runTestInt(TestFunction fun, const char *name)  //{{{1
         meanCount = 0;
         fun();
     } catch (const SkippedTest &skip) {
-        UnitTest::printSkip();
+        vir::test::printSkip();
         std::cout << name << ' ' << skip.message << std::endl;
         ++skippedTests;
         return;
@@ -444,7 +446,7 @@ void UnitTester::runTestInt(TestFunction fun, const char *name)  //{{{1
             }
             ++failedTests;
         } else {
-            UnitTest::printPass();
+            vir::test::printPass();
             std::cout << name;
             if (findMaximumDistance) {
                 if (maximumDistance > 0.) {
@@ -1085,29 +1087,29 @@ template <typename T> inline void Compare::writePlotData(std::fstream &file, T a
 // Workaround for clang: The "<< ' '" is only added to silence the warnings
 // about unused return values.
 #define FUZZY_COMPARE(a, b)                                                                        \
-    UnitTest::Compare(a, b, #a, #b, __FILE__, __LINE__, UnitTest::Compare::Fuzzy()) << ' '
+    vir::test::Compare(a, b, #a, #b, __FILE__, __LINE__, vir::test::Compare::Fuzzy()) << ' '
 // COMPARE_ABSOLUTE_ERROR {{{1
 #define COMPARE_ABSOLUTE_ERROR(a_, b_, error_)                                           \
-    UnitTest::Compare(a_, b_, #a_, #b_, __FILE__, __LINE__,                              \
-                      UnitTest::Compare::AbsoluteError(), error_)                        \
+    vir::test::Compare(a_, b_, #a_, #b_, __FILE__, __LINE__,                              \
+                      vir::test::Compare::AbsoluteError(), error_)                        \
         << ' '
 // COMPARE_RELATIVE_ERROR {{{1
 #define COMPARE_RELATIVE_ERROR(a_, b_, error_)                                           \
-    UnitTest::Compare(a_, b_, #a_, #b_, __FILE__, __LINE__,                              \
-                      UnitTest::Compare::RelativeError(), error_)                        \
+    vir::test::Compare(a_, b_, #a_, #b_, __FILE__, __LINE__,                              \
+                      vir::test::Compare::RelativeError(), error_)                        \
         << ' '
 // COMPARE {{{1
-#define COMPARE(a, b) UnitTest::Compare(a, b, #a, #b, __FILE__, __LINE__) << ' '
+#define COMPARE(a, b) vir::test::Compare(a, b, #a, #b, __FILE__, __LINE__) << ' '
 // COMPARE_NOEQ {{{1
 #define COMPARE_NOEQ(a, b)                                                                         \
-    UnitTest::Compare(a, b, #a, #b, __FILE__, __LINE__, UnitTest::Compare::NoEq()) << ' '
+    vir::test::Compare(a, b, #a, #b, __FILE__, __LINE__, vir::test::Compare::NoEq()) << ' '
 // MEMCOMPARE {{{1
 #define MEMCOMPARE(a, b)                                                                           \
-    UnitTest::Compare(a, b, #a, #b, __FILE__, __LINE__, UnitTest::Compare::Mem()) << ' '
+    vir::test::Compare(a, b, #a, #b, __FILE__, __LINE__, vir::test::Compare::Mem()) << ' '
 // VERIFY {{{1
-#define VERIFY(cond) UnitTest::Compare(cond, #cond, __FILE__, __LINE__) << ' '
+#define VERIFY(cond) vir::test::Compare(cond, #cond, __FILE__, __LINE__) << ' '
 // FAIL {{{1
-#define FAIL() UnitTest::Compare(__FILE__, __LINE__) << ' '
+#define FAIL() vir::test::Compare(__FILE__, __LINE__) << ' '
 
 // Skip {{{1
 class Skip
@@ -1230,7 +1232,8 @@ template <typename... Ts> Typelist<Ts...> hackTypelist(void (*)(Ts...));
 template <typename... Ts> Typelist<Ts...> hackTypelist(void (*)(Typelist<Ts...>));
 
 //}}}1
-}  // namespace UnitTest
+}  // namespace test
+}  // namespace vir
 
 // TEST_TYPES / TEST_CATCH / TEST macros {{{1
 #define REAL_TEST_TYPES(V_, name_, typelist_)                                            \
@@ -1243,8 +1246,8 @@ template <typename... Ts> Typelist<Ts...> hackTypelist(void (*)(Typelist<Ts...>)
         name_##_ctor()                                                                   \
         {                                                                                \
             using list =                                                                 \
-                decltype(UnitTest::hackTypelist(std::declval<void typelist_>()));        \
-            UnitTest::addTestInstantiations<name_##_>(                                   \
+                decltype(vir::test::hackTypelist(std::declval<void typelist_>()));        \
+            vir::test::addTestInstantiations<name_##_>(                                   \
                 #name_, list{}, Vc::make_index_sequence<list::size()>{});                \
         }                                                                                \
     } name_##_ctor_;                                                                     \
@@ -1266,7 +1269,7 @@ template <typename... Ts> Typelist<Ts...> hackTypelist(void (*)(Typelist<Ts...>)
     struct name_##_ {                                                                    \
         static void run();                                                               \
     };                                                                                   \
-    UnitTest::Test<name_##_> test_##name_##_(#name_);                                    \
+        vir::test::Test<name_##_> test_##name_##_(#name_);                                    \
     }                                                                                    \
     void Tests::name_##_::run()
 
@@ -1277,7 +1280,7 @@ template <typename... Ts> Typelist<Ts...> hackTypelist(void (*)(Typelist<Ts...>)
     {                                                                                    \
         static void run();                                                               \
     };                                                                                   \
-    UnitTest::Test<Test##name_, exception_> test_##name_##_(#name_);                     \
+vir::test::Test<Test##name_, exception_> test_##name_##_(#name_);                     \
     void Test##name_::run()
 
 #define FAKE_TEST_CATCH(name_, exception_) template <typename UnitTesT_T_> void name_()
@@ -1308,12 +1311,12 @@ __cdecl
 #endif
 main(int argc, char **argv)  //{{{1
 {
-    UnitTest::initTest(argc, argv);
-    UnitTest::runAll();
+    vir::test::initTest(argc, argv);
+    vir::test::runAll();
 #ifdef testAllTypes
     testmain();
 #endif
-    return UnitTest::global_unit_test_object_.finalize();
+    return vir::test::global_unit_test_object_.finalize();
 }
 
 //}}}1
