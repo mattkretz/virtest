@@ -1166,9 +1166,9 @@ using TypeAtIndex = typename TypeAtIndexX<I, Indexer>::type;
 
 template <template <typename> class TestWrapper, typename... Ts, std::size_t... I>
 static int addTestInstantiations(const char *basename, Typelist<Ts...>,
-                                 Vc::index_sequence<I...>)
+                                 std::index_sequence<I...>)
 {
-  using Indexer = TypelistIndexing::indexer<Vc::index_sequence<I...>, Ts...>;
+  using Indexer = TypelistIndexing::indexer<std::index_sequence<I...>, Ts...>;
   std::string name(basename);
   name += '<';
   const auto &x = {
@@ -1200,7 +1200,7 @@ template <typename... Ts> Typelist<Ts...> hackTypelist(void (*)(Typelist<Ts...>)
     {                                                                                    \
       using list = decltype(vir::test::hackTypelist(std::declval<void typelist_>()));    \
       vir::test::addTestInstantiations<name_##_>(                                        \
-          #name_, list{}, Vc::make_index_sequence<list::size()>{});                      \
+          #name_, list{}, std::make_index_sequence<list::size()>{});                     \
     }                                                                                    \
   } name_##_ctor_;                                                                       \
   }                                                                                      \
