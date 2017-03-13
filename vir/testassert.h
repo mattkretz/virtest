@@ -39,17 +39,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #undef assert
-#define assert(expr)                                                                     \
-  ((expr) ? static_cast<void>(0) : vir::test::assert_fail(#expr, __FILE__, __LINE__))
+#define assert(expr) vir::test::assert_impl(expr, #expr, __FILE__, __LINE__)
 
-#define Vc_ASSERT(expr)                                                                  \
-  ((expr) ? static_cast<void>(0) : vir::test::assert_fail(#expr, __FILE__, __LINE__));
+#define Vc_ASSERT(expr) vir::test::assert_impl(expr, #expr, __FILE__, __LINE__);
 
 namespace vir
 {
 namespace test
 {
-inline void assert_fail(const char *code, const char *file, int line);
+inline void assert_impl(bool ok, const char *code, const char *file, int line);
 }  // namespace test
 }  // namespace vir
 

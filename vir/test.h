@@ -281,7 +281,6 @@ public:
     UnitTester()
         : status(true)
         , expect_failure(false)
-        , assert_failure(0)
         , expect_assert_failure(false)
         , float_fuzzyness(1.f)
         , double_fuzzyness(1.)
@@ -314,7 +313,6 @@ public:
 
     bool status;
     bool expect_failure;
-    int assert_failure;
     bool expect_assert_failure;
     float float_fuzzyness;
     double double_fuzzyness;
@@ -1141,30 +1139,26 @@ public:
         return *this;
     }
 };
-// assert_fail (called from assert macro) {{{1
-inline void assert_fail(const char *code, const char *file, int line)
+
+// assert_impl (called from assert macro) {{{1
+inline void assert_impl(bool ok, const char *code, const char *file, int line)
 {
-  if (global_unit_test_object_.expect_assert_failure) {
-    ++global_unit_test_object_.assert_failure;
-  } else {
+  if (Vc_IS_UNLIKELY(global_unit_test_object_.expect_assert_failure)) {
+    if (ok) {
+      Compare(file, line) << "assert(" << code << ") should have failed.";
+    }
+  } else if (Vc_IS_UNLIKELY(!ok)) {
     Compare(file, line) << "assert(" << code << ") failed.";
   }
 }
 
-// EXPECT_ASSERT_FAILURE {{{1
-#define EXPECT_ASSERT_FAILURE(code)                                                                \
-    global_unit_test_object_.expect_assert_failure = true;                                         \
-    global_unit_test_object_.assert_failure = 0;                                                   \
-    code;                                                                                          \
-    if (global_unit_test_object_.assert_failure == 0) {                                            \
-        /* failure expected but it didn't fail */                                                  \
-        std::cout << "       " << #code << " at " << __FILE__ << ":" << __LINE__                   \
-                  << " did not fail as was expected.\n";                                           \
-        global_unit_test_object_.status = false;                                                   \
-        throw UnitTestFailure();                                                                   \
-        return;                                                                                    \
-    }                                                                                              \
-    global_unit_test_object_.expect_assert_failure = false
+// expect_assert_failure {{{1
+template <class F> inline void expect_assert_failure(F &&f)
+{
+  global_unit_test_object_.expect_assert_failure = true;
+  std::forward<F>(f)();
+  global_unit_test_object_.expect_assert_failure = false;
+}
 
 // runAll and TestData {{{1
 typedef tuple<TestFunction, std::string> TestData;
