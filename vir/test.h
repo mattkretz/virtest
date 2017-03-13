@@ -29,19 +29,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define UNITTEST_H
 
 #include "typelist.h"
-
-#ifdef Vc_ASSERT
-#error "include unittest.h before any Vc header"
-#endif
-namespace UnitTest
-{
-static void unittest_assert(bool cond, const char *code, const char *file, int line);
-}  // namespace UnitTest
-#define Vc_ASSERT(cond) UnitTest::unittest_assert(cond, #cond, __FILE__, __LINE__);
-
-#include <Vc/Vc>
-#include <Vc/support.h>
 #include "detail/ulp.h"
+#include "typetostring.h"
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
@@ -56,7 +45,6 @@ static void unittest_assert(bool cond, const char *code, const char *file, int l
 #ifdef HAVE_CXX_ABI_H
 #include <cxxabi.h>
 #endif
-#include "typetostring.h"
 
 #ifdef DOXYGEN
 
@@ -1151,21 +1139,15 @@ public:
         return *this;
     }
 };
-// unittest_assert (called from assert macro) {{{1
-inline void unittest_assert(bool cond, const char *code, const char *file, int line)
+// assert_fail (called from assert macro) {{{1
+inline void assert_fail(const char *code, const char *file, int line)
 {
-    if (!cond) {
-        if (global_unit_test_object_.expect_assert_failure) {
-            ++global_unit_test_object_.assert_failure;
-        } else {
-            Compare(file, line) << "assert(" << code << ") failed.";
-        }
-    }
+  if (global_unit_test_object_.expect_assert_failure) {
+    ++global_unit_test_object_.assert_failure;
+  } else {
+    Compare(file, line) << "assert(" << code << ") failed.";
+  }
 }
-#ifdef assert
-#undef assert
-#endif
-#define assert(cond) unittest_assert(cond, #cond, __FILE__, __LINE__)
 
 // EXPECT_ASSERT_FAILURE {{{1
 #define EXPECT_ASSERT_FAILURE(code)                                                                \
