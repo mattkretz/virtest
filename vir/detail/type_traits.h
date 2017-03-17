@@ -25,50 +25,30 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 }}}*/
 
-#ifndef VIR_TESTS_METAHELPERS_H_
-#define VIR_TESTS_METAHELPERS_H_
+#ifndef VIR_DETAIL_TYPE_TRAITS_H_
+#define VIR_DETAIL_TYPE_TRAITS_H_
+
+#include <type_traits>
 
 namespace vir
 {
-namespace test
+namespace detail
 {
-// operator_is_substitution_failure {{{1
-template <class A, class B, class Op = std::plus<>>
-constexpr bool operator_is_substitution_failure_impl(float)
+
+namespace has_equality_operator_impl
 {
-  return true;
-}
+template <typename T, typename U,
+          typename = std::enable_if_t<!std::is_same<
+              void, decltype(std::declval<T>() == std::declval<U>())>::value>>
+std::true_type test(int);
+template <typename T, typename U> std::false_type test(...);
+}  // namespace has_equality_operator_impl
 
-template <class A, class B, class Op = std::plus<>>
-constexpr std::conditional_t<true, bool,
-                             decltype(Op()(Vc::declval<A>(), Vc::declval<B>()))>
-operator_is_substitution_failure_impl(int)
-{
-  return false;
-}
+template <typename T, typename U = T>
+struct has_equality_operator
+    : public decltype(has_equality_operator_impl::test<T, U>(1)) {
+};
 
-template <class... Ts>
-constexpr bool operator_is_substitution_failure =
-    operator_is_substitution_failure_impl<Ts...>(int());
-
-// sfinae_is_callable{{{1
-template <class F, class... Args>
-constexpr auto sfinae_is_callable(F &&f, Args &&... args)
-    -> std::conditional_t<true, bool,
-                          decltype(std::forward<F>(f)(std::forward<Args>(args)...))>
-{
-  return true;
-}
-constexpr bool sfinae_is_callable(...) { return false; }
-
-// traits {{{1
-template <class A, class B>
-constexpr bool has_less_bits =
-    std::numeric_limits<A>::digits < std::numeric_limits<B>::digits;
-
-//}}}1
-
-}  // namespace test
+}  // namespace detail
 }  // namespace vir
-#endif  // VIR_TESTS_METAHELPERS_H_
-// vim: foldmethod=marker
+#endif  // VIR_DETAIL_TYPE_TRAITS_H_

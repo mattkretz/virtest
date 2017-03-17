@@ -1,5 +1,5 @@
-/*  This file is part of the Vc library. {{{
-Copyright © 2011-2016 Matthias Kretz <kretz@kde.org>
+/*{{{
+Copyright © 2011-2017 Matthias Kretz <kretz@kde.org>
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -25,97 +25,122 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 }}}*/
 
-#ifndef TESTS_ULP_H
-#define TESTS_ULP_H
+#ifndef VIR_DETAIL_ULP_H_
+#define VIR_DETAIL_ULP_H_
 
-#include <Vc/datapar>
+#include "vc_fwd.h"
 #include <cmath>
 #include <limits>
 
 #ifdef Vc_MSVC
 namespace std
 {
-    static inline bool isnan(float  x) { return _isnan(x); }
-    static inline bool isnan(double x) { return _isnan(x); }
-} // namespace std
+static inline bool isnan(float x) { return _isnan(x); }
+static inline bool isnan(double x) { return _isnan(x); }
+}  // namespace std
 #endif
 
-template <typename T, typename = Vc::enable_if<std::is_floating_point<T>::value>>
-static T ulpDiffToReference(T val, T ref)
+namespace vir
 {
-    if (val == ref || (std::isnan(val) && std::isnan(ref))) {
-        return 0;
-    }
-    if (ref == T(0)) {
-        return 1 + ulpDiffToReference(std::abs(val), std::numeric_limits<T>::min());
-    }
-    if (val == T(0)) {
-        return 1 + ulpDiffToReference(std::numeric_limits<T>::min(), std::abs(ref));
-    }
-
-    int exp;
-    /*tmp = */ frexp(ref, &exp); // ref == tmp * 2 ^ exp => tmp == ref * 2 ^ -exp
-    // tmp is now in the range [0.5, 1.0[
-    // now we want to know how many times we can fit 2^-numeric_limits<T>::digits between tmp and
-    // val * 2 ^ -exp
-    return ldexp(std::abs(ref - val), std::numeric_limits<T>::digits - exp);
-}
-
-template <typename T, typename = Vc::enable_if<std::is_floating_point<T>::value>>
-inline T ulpDiffToReferenceSigned(T val, T ref)
+namespace detail
 {
-    return ulpDiffToReference(val, ref) * (val - ref < 0 ? -1 : 1);
-}
-
-template <typename V, typename = Vc::enable_if<Vc::is_datapar<V>::value>>
-static V ulpDiffToReference(const V &_val, const V &_ref)
+/**
+ * Returns the distance in ULP of \p ref from \p ref to \p val.
+ *
+ * This algorithm does not return the number of possible float representations between the given two
+ * values. Instead it determines the value of the least significant bit in the mantissa of the
+ * reference value \p ref. This is considered as one ULP - unit in the last place (or unit of least
+ * precision). The function then returns abs(val - ref) / ULP. The order of arguments therefore
+ * matters.
+ *
+ * Denormals, NaN, and infinities are not supported.
+ *
+ * If \p val and \p ref have a different sign, the reported distance is very large. Since having the
+ * wrong sign can have huge effects on certain algorithms this is considered a feature rather than a
+ * bug.
+ */
+template <typename T>
+inline std::enable_if_t<std::is_floating_point<T>::value, T> ulpDiffToReference(T val,
+                                                                                T ref)
 {
-    using namespace Vc;
-    using T = typename V::EntryType;
-    using M = typename V::Mask;
-
-    V val = _val;
-    V ref = _ref;
-
-    V diff = V::Zero();
-
-    M zeroMask = ref == V::Zero();
-    val  (zeroMask)= abs(val);
-    ref  (zeroMask)= std::numeric_limits<V>::min();
-    diff (zeroMask)= V::One();
-    zeroMask = val == V::Zero();
-    ref  (zeroMask)= abs(ref);
-    val  (zeroMask)= std::numeric_limits<V>::min();
-    diff (zeroMask)+= V::One();
-
-    typename V::IndexType exp;
-    frexp(ref, &exp);
-    diff += ldexp(abs(ref - val), std::numeric_limits<T>::digits - exp);
-    diff.setZero(_val == _ref || (isnan(_val) && isnan(_ref)));
-    return diff;
-}
-
-template <typename T, typename A>
-inline Vc::enable_if<std::is_floating_point<T>::value, T> ulpDiffToReferenceSigned(
-    const Vc::datapar<T, A> &_val, const Vc::datapar<T, A> &_ref)
-{
-    return copysign(ulpDiffToReference(_val, _ref), _val - _ref);
-}
-
-template <typename T, typename A>
-inline Vc::enable_if<!std::is_floating_point<T>::value, T> ulpDiffToReferenceSigned(
-    const Vc::datapar<T, A> &, const Vc::datapar<T, A> &)
-{
+  using namespace std;
+  if (val == ref || (isnan(val) && isnan(ref))) {
     return 0;
+  }
+  if (ref == T(0)) {
+    return 1 + ulpDiffToReference(abs(val), numeric_limits<T>::min());
+  }
+  if (val == T(0)) {
+    return 1 + ulpDiffToReference(numeric_limits<T>::min(), abs(ref));
+  }
+
+  int exp;
+  /*tmp = */ frexp(ref, &exp);  // ref == tmp * 2 ^ exp => tmp == ref * 2 ^ -exp
+  // tmp is now in the range [0.5, 1.0[
+  // now we want to know how many times we can fit 2^-numeric_limits<T>::digits between
+  // tmp and
+  // val * 2 ^ -exp
+  return ldexp(abs(ref - val), numeric_limits<T>::digits - exp);
+}
+
+template <typename T, typename A>
+inline Vc::datapar<T, A> ulpDiffToReference(const Vc::datapar<T, A> &val_,
+                                            const Vc::datapar<T, A> &ref_)
+{
+  using V = Vc::datapar<T, A>;
+  using M = typename V::mask_type;
+
+  V val = val_;
+  V ref = ref_;
+
+  V diff = V();
+
+  M zeroMask = ref == V();
+  where(zeroMask, val) = abs(val);
+  where(zeroMask, ref) = std::numeric_limits<V>::min();
+  where(zeroMask, diff) = 1;
+  zeroMask = val == V();
+  where(zeroMask, ref) = abs(ref);
+  where(zeroMask, val) = std::numeric_limits<V>::min();
+  where(zeroMask, diff) += 1;
+
+  Vc::datapar<int, Vc::datapar_abi::fixed_size<V::size()>> exp;
+  frexp(ref, &exp);
+  diff += ldexp(abs(ref - val), std::numeric_limits<T>::digits - exp);
+  where(val_ == ref_ || (isnan(val_) && isnan(ref_)), diff) = V();
+  return diff;
+}
+
+template <typename T, typename A>
+inline std::enable_if_t<std::is_floating_point<T>::value, Vc::datapar<T, A>>
+ulpDiffToReferenceSigned(const Vc::datapar<T, A> &_val, const Vc::datapar<T, A> &_ref)
+{
+  return copysign(ulpDiffToReference(_val, _ref), _val - _ref);
+}
+
+template <typename T, typename A>
+inline std::enable_if_t<!std::is_floating_point<T>::value, Vc::datapar<T, A>>
+ulpDiffToReferenceSigned(const Vc::datapar<T, A> &, const Vc::datapar<T, A> &)
+{
+  return 0;
 }
 
 template <typename T>
-inline Vc::enable_if<!std::is_floating_point<T>::value, T> ulpDiffToReferenceSigned(
-    const T &, const T &)
+inline std::enable_if_t<std::is_floating_point<T>::value, T> ulpDiffToReferenceSigned(
+    T val, T ref)
 {
-    return 0;
+  return ulpDiffToReference(val, ref) * (val - ref < 0 ? -1 : 1);
 }
 
-#endif // TESTS_ULP_H
+template <typename T>
+inline std::enable_if_t<!std::is_floating_point<T>::value, T> ulpDiffToReferenceSigned(
+    const T &, const T &)
+{
+  return 0;
+}
 
-// vim: foldmethod=marker
+}  // namespace detail
+}  // namespace vir
+
+#endif  // VIR_DETAIL_ULP_H_
+// vim: sw=2 et sts=2 foldmethod=marker

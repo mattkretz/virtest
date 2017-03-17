@@ -25,50 +25,70 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 }}}*/
 
-#ifndef VIR_TESTS_METAHELPERS_H_
-#define VIR_TESTS_METAHELPERS_H_
+#ifndef VIR_DETAIL_MAY_USE_COLOR_H_
+#define VIR_DETAIL_MAY_USE_COLOR_H_
+
+#include "macros.h"
+#include <ostream>
+
+#if defined(__GNUC__) && !defined(_WIN32) && defined(_GLIBCXX_OSTREAM)
+#define Vc_HACK_OSTREAM_FOR_TTY 1
+#endif
+
+#ifdef Vc_HACK_OSTREAM_FOR_TTY
+#include <unistd.h>
+#include <ext/stdio_sync_filebuf.h>
+#endif
 
 namespace vir
 {
-namespace test
+namespace detail
 {
-// operator_is_substitution_failure {{{1
-template <class A, class B, class Op = std::plus<>>
-constexpr bool operator_is_substitution_failure_impl(float)
+#ifdef Vc_HACK_OSTREAM_FOR_TTY
+static bool isATty(const std::ostream &os)
 {
-  return true;
+  __gnu_cxx::stdio_sync_filebuf<char> *hack =
+      dynamic_cast<__gnu_cxx::stdio_sync_filebuf<char> *>(os.rdbuf());
+  if (!hack) {
+    return false;
+  }
+  FILE *file = hack->file();
+  return 1 == isatty(fileno(file));
 }
-
-template <class A, class B, class Op = std::plus<>>
-constexpr std::conditional_t<true, bool,
-                             decltype(Op()(Vc::declval<A>(), Vc::declval<B>()))>
-operator_is_substitution_failure_impl(int)
+VIR_ALWAYS_INLINE VIR_CONST bool may_use_color(const std::ostream &os)
 {
-  return false;
+  static int result = -1;
+  if (VIR_IS_UNLIKELY(result == -1)) {
+    result = isATty(os);
+  }
+  return result;
 }
+#else
+constexpr bool may_use_color(const std::ostream &) { return false; }
+#endif
 
-template <class... Ts>
-constexpr bool operator_is_substitution_failure =
-    operator_is_substitution_failure_impl<Ts...>(int());
-
-// sfinae_is_callable{{{1
-template <class F, class... Args>
-constexpr auto sfinae_is_callable(F &&f, Args &&... args)
-    -> std::conditional_t<true, bool,
-                          decltype(std::forward<F>(f)(std::forward<Args>(args)...))>
+namespace color
 {
-  return true;
+struct Color {
+  const char *data;
+};
+
+static constexpr Color red    = {"\033[1;40;31m"};
+static constexpr Color green  = {"\033[1;40;32m"};
+static constexpr Color yellow = {"\033[1;40;33m"};
+static constexpr Color blue   = {"\033[1;40;34m"};
+static constexpr Color normal = {"\033[0m"};
+
+inline std::ostream &operator<<(std::ostream &out, const Color &c)
+{
+  if (may_use_color(out)) {
+    out << c.data;
+  }
+  return out;
 }
-constexpr bool sfinae_is_callable(...) { return false; }
+}  // namespace color
 
-// traits {{{1
-template <class A, class B>
-constexpr bool has_less_bits =
-    std::numeric_limits<A>::digits < std::numeric_limits<B>::digits;
-
-//}}}1
-
-}  // namespace test
+}  // namespace detail
 }  // namespace vir
-#endif  // VIR_TESTS_METAHELPERS_H_
-// vim: foldmethod=marker
+
+#endif  // VIR_DETAIL_MAY_USE_COLOR_H_

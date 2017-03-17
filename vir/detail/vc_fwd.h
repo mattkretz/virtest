@@ -25,50 +25,41 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 }}}*/
 
-#ifndef VIR_TESTS_METAHELPERS_H_
-#define VIR_TESTS_METAHELPERS_H_
+#ifndef VIR_DETAIL_VC_FWD_H_
+#define VIR_DETAIL_VC_FWD_H_
 
-namespace vir
+#ifdef __INTEL_COMPILER
+namespace Vc_2
 {
-namespace test
+#else
+namespace Vc
 {
-// operator_is_substitution_failure {{{1
-template <class A, class B, class Op = std::plus<>>
-constexpr bool operator_is_substitution_failure_impl(float)
+inline namespace v2
 {
-  return true;
-}
+#endif
 
-template <class A, class B, class Op = std::plus<>>
-constexpr std::conditional_t<true, bool,
-                             decltype(Op()(Vc::declval<A>(), Vc::declval<B>()))>
-operator_is_substitution_failure_impl(int)
+namespace datapar_abi
 {
-  return false;
-}
+template <int N> struct fixed_size;
+using scalar = fixed_size<1>;
+struct sse;
+struct avx;
+struct avx512;
+struct knc;
+struct neon;
+}  // namespace datapar_abi
 
-template <class... Ts>
-constexpr bool operator_is_substitution_failure =
-    operator_is_substitution_failure_impl<Ts...>(int());
+template <class T> struct is_datapar;
+template <class T> struct is_mask;
+template <class T, class Abi> class datapar;
+template <class T, class Abi> class mask;
 
-// sfinae_is_callable{{{1
-template <class F, class... Args>
-constexpr auto sfinae_is_callable(F &&f, Args &&... args)
-    -> std::conditional_t<true, bool,
-                          decltype(std::forward<F>(f)(std::forward<Args>(args)...))>
-{
-  return true;
-}
-constexpr bool sfinae_is_callable(...) { return false; }
+#ifdef __INTEL_COMPILER
+}  // namespace Vc_2
+namespace Vc = Vc_2;
+#else
+}  // inline namespace v2
+}  // namespace Vc
+#endif
 
-// traits {{{1
-template <class A, class B>
-constexpr bool has_less_bits =
-    std::numeric_limits<A>::digits < std::numeric_limits<B>::digits;
-
-//}}}1
-
-}  // namespace test
-}  // namespace vir
-#endif  // VIR_TESTS_METAHELPERS_H_
-// vim: foldmethod=marker
+#endif  // VIR_DETAIL_VC_FWD_H_

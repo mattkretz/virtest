@@ -1,4 +1,4 @@
-/*  This file is part of the Vc library. {{{
+/*{{{
 Copyright © 2009-2017 Matthias Kretz <kretz@kde.org>
 
 Redistribution and use in source and binary forms, with or without
@@ -25,12 +25,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 }}}*/
 
-#ifndef UNITTEST_H
-#define UNITTEST_H
+#ifndef VIR_TEST_H_
+#define VIR_TEST_H_
 
 #include "typelist.h"
-#include "detail/ulp.h"
 #include "typetostring.h"
+#include "detail/color.h"
+#include "detail/ulp.h"
+#include "detail/type_traits.h"
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
@@ -252,7 +254,7 @@ static inline void printPass()
 {
   static const char *str = 0;
   if (str == 0) {
-    if (Vc::detail::mayUseColor(std::cout)) {
+    if (vir::detail::may_use_color(std::cout)) {
       static const char *const pass = " \033[1;40;32mPASS:\033[0m ";
       str = pass;
     } else {
@@ -264,7 +266,7 @@ static inline void printPass()
 }
 static inline void printSkip()
 {
-  std::cout << Vc::detail::color::yellow << " SKIP: " << Vc::detail::color::normal;
+  std::cout << vir::detail::color::yellow << " SKIP: " << vir::detail::color::normal;
 }
 
 class UnitTestFailure  //{{{1
@@ -349,7 +351,7 @@ static const char *failString()  // {{{1
   }
   static const char *str = 0;
   if (str == 0) {
-    if (Vc::detail::mayUseColor(std::cout)) {
+    if (vir::detail::may_use_color(std::cout)) {
       static const char *const fail = " \033[1;40;31mFAIL:\033[0m ";
       str = fail;
     } else {
@@ -458,16 +460,18 @@ void UnitTester::runTestInt(TestFunction fun, const char *name)  //{{{1
   }
 }
 
+// all_of {{{1
+VIR_ALWAYS_INLINE bool all_of(bool x) { return x; }
+
 // unittest_compareHelper {{{1
 template <typename T1, typename T2>
-Vc_ALWAYS_INLINE bool unittest_compareHelper(const T1 &a, const T2 &b)
+VIR_ALWAYS_INLINE bool unittest_compareHelper(const T1 &a, const T2 &b)
 {
-  using Vc::all_of;
   return all_of(a == b);
 }
 
 template <>
-Vc_ALWAYS_INLINE bool unittest_compareHelper<std::type_info, std::type_info>(
+VIR_ALWAYS_INLINE bool unittest_compareHelper<std::type_info, std::type_info>(
     const std::type_info &a, const std::type_info &b)
 {
   return &a == &b;
@@ -481,7 +485,7 @@ template <typename T, typename U = decltype(abs(std::declval<const T &>()))>
 T ulpDiffToReferenceWrapper(T a, T b, int)
 {
   const T diff = ulpDiffToReference(a, b);
-  if (Vc_IS_UNLIKELY(global_unit_test_object_.findMaximumDistance)) {
+  if (VIR_IS_UNLIKELY(global_unit_test_object_.findMaximumDistance)) {
     using std::abs;
     global_unit_test_object_.maximumDistance =
         std::max<double>(abs(diff), global_unit_test_object_.maximumDistance);
@@ -506,13 +510,13 @@ template <typename T>
 static inline bool unittest_fuzzyCompareHelper(const T &a, const T &b, std::true_type)
 {
   using U = value_type_or_T<T>;
-  return Vc::all_of(detail::ulpDiffToReferenceWrapper(a, b, int()) <=
-                    global_unit_test_object_.fuzzyness<U>());
+  return all_of(detail::ulpDiffToReferenceWrapper(a, b, int()) <=
+                global_unit_test_object_.fuzzyness<U>());
 }
 template <typename T>
 static inline bool unittest_fuzzyCompareHelper(const T &a, const T &b, std::false_type)
 {
-  return Vc::all_of(a == b);
+  return all_of(a == b);
 }
 
 class Compare  //{{{1
@@ -561,15 +565,15 @@ public:
   // Normal Compare ctor {{{2
 #if (defined __x86_64__ || defined __amd64__ || defined __i686__ || defined __i386__) && \
     !defined __SSE2__
-#define Vc_NEED_FUZZY_FLOAT_COMPARE_ 1
+#define VIR_NEED_FUZZY_FLOAT_COMPARE_ 1
 #else
-#define Vc_NEED_FUZZY_FLOAT_COMPARE_ 0
+#define VIR_NEED_FUZZY_FLOAT_COMPARE_ 0
 #endif
   template <typename T1, typename T2>
-  Vc_ALWAYS_INLINE Compare(
+  VIR_ALWAYS_INLINE Compare(
       const T1 &a, const T2 &b, const char *_a, const char *_b, const char *_file,
-      typename std::enable_if<Vc::Traits::has_equality_operator<T1, T2>::value
-#if Vc_NEED_FUZZY_FLOAT_COMPARE_
+      typename std::enable_if<vir::detail::has_equality_operator<T1, T2>::value
+#if VIR_NEED_FUZZY_FLOAT_COMPARE_
                                   &&
                                   !std::is_floating_point<value_type_or_T<T1>>::value &&
                                   !std::is_floating_point<value_type_or_T<T2>>::value
@@ -578,23 +582,23 @@ public:
                               int>::type _line)
       : m_ip(getIp()), m_failed(!unittest_compareHelper(a, b))
   {
-    if (Vc_IS_UNLIKELY(m_failed)) {
+    if (VIR_IS_UNLIKELY(m_failed)) {
       printFailure(a, b, _a, _b, _file, _line);
     }
   }
 
-#if Vc_NEED_FUZZY_FLOAT_COMPARE_
+#if VIR_NEED_FUZZY_FLOAT_COMPARE_
   template <typename T1, typename T2,
             typename T = typename std::common_type<T1, T2>::type>
-  Vc_ALWAYS_INLINE Compare(
+  VIR_ALWAYS_INLINE Compare(
       const T1 &a, const T2 &b, const char *_a, const char *_b, const char *_file,
-      typename std::enable_if<Vc::Traits::has_equality_operator<T1, T2>::value &&
+      typename std::enable_if<vir::detail::has_equality_operator<T1, T2>::value &&
                                   std::is_floating_point<value_type_or_T<T>>::value,
                               int>::type _line)
       : m_ip(getIp())
-      , m_failed(!Vc::all_of(detail::ulpDiffToReferenceWrapper(T(a), T(b), int()) <= 1))
+      , m_failed(!all_of(detail::ulpDiffToReferenceWrapper(T(a), T(b), int()) <= 1))
   {
-    if (Vc_IS_UNLIKELY(m_failed)) {
+    if (VIR_IS_UNLIKELY(m_failed)) {
       printFirst();
       printPosition(_file, _line);
       print(_a);
@@ -617,12 +621,12 @@ public:
     }
   }
 #endif
-#undef Vc_NEED_FUZZY_FLOAT_COMPARE_
+#undef VIR_NEED_FUZZY_FLOAT_COMPARE_
 
   template <typename T1, typename T2>
-  Vc_ALWAYS_INLINE Compare(
+  VIR_ALWAYS_INLINE Compare(
       const T1 &a, const T2 &b, const char *_a, const char *_b, const char *_file,
-      typename std::enable_if<!Vc::Traits::has_equality_operator<T1, T2>::value,
+      typename std::enable_if<!vir::detail::has_equality_operator<T1, T2>::value,
                               int>::type _line)
       : Compare(a, b, _a, _b, _file, _line, Mem())
   {
@@ -630,14 +634,14 @@ public:
 
   // Mem Compare ctor {{{2
   template <typename T1, typename T2>
-  Vc_ALWAYS_INLINE Compare(const T1 &valueA, const T2 &valueB, const char *variableNameA,
+  VIR_ALWAYS_INLINE Compare(const T1 &valueA, const T2 &valueB, const char *variableNameA,
                            const char *variableNameB, const char *filename, int line, Mem)
       : m_ip(getIp()), m_failed(0 != std::memcmp(&valueA, &valueB, sizeof(T1)))
   {
     static_assert(
         sizeof(T1) == sizeof(T2),
         "MEMCOMPARE requires both of its arguments to have the same size (equal sizeof)");
-    if (Vc_IS_UNLIKELY(m_failed)) {
+    if (VIR_IS_UNLIKELY(m_failed)) {
       printFirst();
       printPosition(filename, line);
       print("MEMCOMPARE(");
@@ -658,11 +662,11 @@ public:
 
   // NoEq Compare ctor {{{2
   template <typename T1, typename T2>
-  Vc_ALWAYS_INLINE Compare(const T1 &a, const T2 &b, const char *_a, const char *_b,
+  VIR_ALWAYS_INLINE Compare(const T1 &a, const T2 &b, const char *_a, const char *_b,
                            const char *_file, int _line, NoEq)
       : m_ip(getIp()), m_failed(!unittest_compareHelper(a, b))
   {
-    if (Vc_IS_UNLIKELY(m_failed)) {
+    if (VIR_IS_UNLIKELY(m_failed)) {
       printFirst();
       printPosition(_file, _line);
       print(_a);
@@ -681,13 +685,13 @@ public:
 
   // Fuzzy Compare ctor {{{2
   template <typename T>
-  Vc_ALWAYS_INLINE Compare(const T &a, const T &b, const char *_a, const char *_b,
+  VIR_ALWAYS_INLINE Compare(const T &a, const T &b, const char *_a, const char *_b,
                            const char *_file, int _line, Fuzzy)
       : m_ip(getIp())
       , m_failed(!unittest_fuzzyCompareHelper(
             a, b, std::is_floating_point<value_type_or_T<T>>()))
   {
-    if (Vc_IS_UNLIKELY(m_failed)) {
+    if (VIR_IS_UNLIKELY(m_failed)) {
       printFirst();
       printPosition(_file, _line);
       print(_a);
@@ -711,11 +715,11 @@ public:
 
   // Absolute Error Compare ctor {{{2
   template <typename T, typename ET>
-  Vc_ALWAYS_INLINE Compare(const T &a, const T &b, const char *_a, const char *_b,
+  VIR_ALWAYS_INLINE Compare(const T &a, const T &b, const char *_a, const char *_b,
                            const char *_file, int _line, AbsoluteError, ET error)
       : m_ip(getIp()), m_failed(absoluteErrorTest(a, b, error))
   {
-    if (Vc_IS_UNLIKELY(m_failed)) {
+    if (VIR_IS_UNLIKELY(m_failed)) {
       printFirst();
       printPosition(_file, _line);
       print(_a);
@@ -747,11 +751,11 @@ public:
 
   // Relative Error Compare ctor {{{2
   template <typename T, typename ET>
-  Vc_ALWAYS_INLINE Compare(const T &a, const T &b, const char *_a, const char *_b,
+  VIR_ALWAYS_INLINE Compare(const T &a, const T &b, const char *_a, const char *_b,
                            const char *_file, int _line, RelativeError, ET error)
       : m_ip(getIp()), m_failed(relativeErrorTest(a, b, error))
   {
-    if (Vc_IS_UNLIKELY(m_failed)) {
+    if (VIR_IS_UNLIKELY(m_failed)) {
       printFirst();
       printPosition(_file, _line);
       print(_a);
@@ -791,10 +795,10 @@ public:
   }
 
   // VERIFY ctor {{{2
-  Vc_ALWAYS_INLINE Compare(bool good, const char *cond, const char *_file, int _line)
+  VIR_ALWAYS_INLINE Compare(bool good, const char *cond, const char *_file, int _line)
       : m_ip(getIp()), m_failed(!good)
   {
-    if (Vc_IS_UNLIKELY(m_failed)) {
+    if (VIR_IS_UNLIKELY(m_failed)) {
       printFirst();
       printPosition(_file, _line);
       print(cond);
@@ -802,55 +806,55 @@ public:
   }
 
   // FAIL ctor {{{2
-  Vc_ALWAYS_INLINE Compare(const char *_file, int _line) : m_ip(getIp()), m_failed(true)
+  VIR_ALWAYS_INLINE Compare(const char *_file, int _line) : m_ip(getIp()), m_failed(true)
   {
     printFirst();
     printPosition(_file, _line);
   }
 
   // stream operators {{{2
-  template <typename T> Vc_ALWAYS_INLINE const Compare &operator<<(const T &x) const
+  template <typename T> VIR_ALWAYS_INLINE const Compare &operator<<(const T &x) const
   {
-    if (Vc_IS_UNLIKELY(m_failed)) {
+    if (VIR_IS_UNLIKELY(m_failed)) {
       print(x);
     }
     return *this;
   }
 
-  Vc_ALWAYS_INLINE const Compare &operator<<(const char *str) const
+  VIR_ALWAYS_INLINE const Compare &operator<<(const char *str) const
   {
-    if (Vc_IS_UNLIKELY(m_failed)) {
+    if (VIR_IS_UNLIKELY(m_failed)) {
       print(str);
     }
     return *this;
   }
 
-  Vc_ALWAYS_INLINE const Compare &operator<<(const char ch) const
+  VIR_ALWAYS_INLINE const Compare &operator<<(const char ch) const
   {
-    if (Vc_IS_UNLIKELY(m_failed)) {
+    if (VIR_IS_UNLIKELY(m_failed)) {
       print(ch);
     }
     return *this;
   }
 
-  Vc_ALWAYS_INLINE const Compare &operator<<(bool b) const
+  VIR_ALWAYS_INLINE const Compare &operator<<(bool b) const
   {
-    if (Vc_IS_UNLIKELY(m_failed)) {
+    if (VIR_IS_UNLIKELY(m_failed)) {
       print(b);
     }
     return *this;
   }
 
-  Vc_ALWAYS_INLINE ~Compare() noexcept(false)
+  VIR_ALWAYS_INLINE ~Compare() noexcept(false)
   {
-    if (Vc_IS_UNLIKELY(m_failed)) {
+    if (VIR_IS_UNLIKELY(m_failed)) {
       printLast();
     }
   }
 
   // }}}2
 private:
-  static Vc_ALWAYS_INLINE size_t getIp()  //{{{2
+  static VIR_ALWAYS_INLINE size_t getIp()  //{{{2
   {
     size_t _ip;
 #ifdef Vc_GNU_ASM
@@ -891,8 +895,8 @@ private:
 
   // printFailure {{{2
   template <typename T1, typename T2>
-  Vc_NEVER_INLINE void printFailure(const T1 &a, const T2 &b, const char *_a,
-                                    const char *_b, const char *_file, int _line)
+  VIR_NEVER_INLINE void printFailure(const T1 &a, const T2 &b, const char *_a,
+                                     const char *_b, const char *_file, int _line)
   {
     printFirst();
     printPosition(_file, _line);
@@ -1108,11 +1112,11 @@ public:
 // assert_impl (called from assert macro) {{{1
 inline void assert_impl(bool ok, const char *code, const char *file, int line)
 {
-  if (Vc_IS_UNLIKELY(global_unit_test_object_.expect_assert_failure)) {
+  if (VIR_IS_UNLIKELY(global_unit_test_object_.expect_assert_failure)) {
     if (ok) {
       Compare(file, line) << "assert(" << code << ") should have failed.";
     }
-  } else if (Vc_IS_UNLIKELY(!ok)) {
+  } else if (VIR_IS_UNLIKELY(!ok)) {
     Compare(file, line) << "assert(" << code << ") failed.";
   }
 }
@@ -1269,6 +1273,5 @@ main(int argc, char **argv)  //{{{1
 
 //}}}1
 #endif  // DOXYGEN
-#endif  // UNITTEST_H
-
+#endif  // VIR_TEST_H_
 // vim: foldmethod=marker
