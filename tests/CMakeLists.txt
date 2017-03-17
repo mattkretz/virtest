@@ -1,4 +1,4 @@
-include_directories(${CMAKE_PROJECT_DIR})
+include_directories(${CMAKE_SOURCE_DIR})
 
 set(all "ALL")
 if(DEFINED ENV{APPVEYOR})
