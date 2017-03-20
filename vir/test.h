@@ -1123,7 +1123,10 @@ template <class F> inline void expect_assert_failure(F &&f)
   std::forward<F>(f)();
   global_unit_test_object_.expect_assert_failure = false;
 }
+//}}}1
 
+namespace detail
+{
 // TestData {{{1
 struct TestData {
   template <class F, class S>
@@ -1184,11 +1187,18 @@ static int addTestInstantiations(const char *basename, Typelist<Ts...>,
 template <typename... Ts> Typelist<Ts...> hackTypelist(void (*)(Ts...));
 template <typename... Ts> Typelist<Ts...> hackTypelist(void (*)(Typelist<Ts...>));
 
+//}}}1
+}  // namespace detail
 void runAll() //{{{1
 {
   for (const auto &data : detail::allTests) {
     global_unit_test_object_.runTestInt(data.f, data.name.c_str());
   }
+}
+
+int finalize()  //{{{1
+{
+  return global_unit_test_object_.finalize();
 }
 
 //}}}1
@@ -1205,8 +1215,9 @@ void runAll() //{{{1
   static struct name_##_ctor {                                                           \
     name_##_ctor()                                                                       \
     {                                                                                    \
-      using list = decltype(vir::test::hackTypelist(std::declval<void typelist_>()));    \
-      vir::test::addTestInstantiations<name_##_>(                                        \
+      using list =                                                                       \
+          decltype(vir::test::detail::hackTypelist(std::declval<void typelist_>()));     \
+      vir::test::detail::addTestInstantiations<name_##_>(                                \
           #name_, list{}, std::make_index_sequence<list::size()>{});                     \
     }                                                                                    \
   } name_##_ctor_;                                                                       \
@@ -1228,7 +1239,7 @@ void runAll() //{{{1
   struct name_##_ {                                                                      \
     static void run();                                                                   \
   };                                                                                     \
-  vir::test::Test<name_##_> test_##name_##_(#name_);                                     \
+  vir::test::detail::Test<name_##_> test_##name_##_(#name_);                             \
   }                                                                                      \
   void Tests::name_##_::run()
 
@@ -1238,7 +1249,7 @@ void runAll() //{{{1
   struct Test##name_ {                                                                   \
     static void run();                                                                   \
   };                                                                                     \
-  vir::test::Test<Test##name_, exception_> test_##name_##_(#name_);                      \
+  vir::test::detail::Test<Test##name_, exception_> test_##name_##_(#name_);              \
   void Test##name_::run()
 
 #define FAKE_TEST_CATCH(name_, exception_) template <typename UnitTesT_T_> void name_()
@@ -1271,7 +1282,7 @@ main(int argc, char **argv)  //{{{1
 {
   vir::test::initTest(argc, argv);
   vir::test::runAll();
-  return vir::test::global_unit_test_object_.finalize();
+  return vir::test::finalize();
 }
 
 //}}}1
