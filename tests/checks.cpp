@@ -25,6 +25,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 }}}*/
 
+#include <vir/testassert.h>
 #include <vir/test.h>
 
 #include <cmath>
@@ -57,6 +58,11 @@ TEST(xfail)  //{{{1
 TEST_CATCH(test_catch, int)  //{{{1
 {
   throw int();
+}
+
+TEST(test_assert)  //{{{1
+{
+  expect_assert_failure([&]() { assert(1 == 2); });
 }
 
 TEST(type_to_string)  //{{{1
