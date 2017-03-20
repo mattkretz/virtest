@@ -238,6 +238,12 @@ namespace vir
 {
 namespace test
 {
+template <typename T> inline void setFuzzyness(T fuzz);
+/** \internal
+ * Implementation namespace
+ */
+namespace detail
+{
 // using statements {{{1
 using std::vector;
 using std::get;
@@ -341,7 +347,6 @@ template <> double &UnitTester::fuzzyness<double>() { return double_fuzzyness; }
 
 static UnitTester global_unit_test_object_;
 
-void EXPECT_FAILURE() { global_unit_test_object_.expect_failure = true; }
 static const char *failString()  // {{{1
 {
   if (global_unit_test_object_.expect_failure) {
@@ -360,33 +365,6 @@ static const char *failString()  // {{{1
   return str;
 }
 
-void initTest(int argc, char **argv)  //{{{1
-{
-  for (int i = 1; i < argc; ++i) {
-    if (0 == std::strcmp(argv[i], "--help") || 0 == std::strcmp(argv[i], "-h")) {
-      std::cout << "Usage: " << argv[0] << " [-h|--help] [--only <testname>] [-v|--vim] "
-                                           "[--maxdist] [--plotdist <plot.dat>]\n";
-      exit(0);
-    }
-    if (0 == std::strcmp(argv[i], "--only") && i + 1 < argc) {
-      global_unit_test_object_.only_name = argv[i + 1];
-    } else if (0 == std::strcmp(argv[i], "--maxdist")) {
-      global_unit_test_object_.findMaximumDistance = true;
-    } else if (0 == std::strcmp(argv[i], "--plotdist") && i + 1 < argc) {
-      global_unit_test_object_.plotFile.open(argv[i + 1], std::ios_base::out);
-      global_unit_test_object_.plotFile << "# reference\tdistance\n";
-    } else if (0 == std::strcmp(argv[i], "--vim") || 0 == std::strcmp(argv[i], "-v")) {
-      global_unit_test_object_.vim_lines = true;
-    }
-  }
-}
-
-// setFuzzyness {{{1
-template <typename T> static inline void setFuzzyness(T fuzz)
-{
-  global_unit_test_object_.fuzzyness<T>() = fuzz;
-}
-
 void UnitTester::runTestInt(TestFunction fun, const char *name)  //{{{1
 {
   if (global_unit_test_object_.only_name &&
@@ -403,7 +381,7 @@ void UnitTester::runTestInt(TestFunction fun, const char *name)  //{{{1
     meanCount = 0;
     fun();
   } catch (const SkippedTest &skip) {
-    vir::test::printSkip();
+    printSkip();
     std::cout << name << ' ' << skip.message << std::endl;
     ++skippedTests;
     return;
@@ -442,7 +420,7 @@ void UnitTester::runTestInt(TestFunction fun, const char *name)  //{{{1
       }
       ++failedTests;
     } else {
-      vir::test::printPass();
+      printPass();
       std::cout << name;
       if (findMaximumDistance) {
         if (maximumDistance > 0.) {
@@ -1018,11 +996,10 @@ VIR_NEVER_INLINE void Compare::printFailure(const T1 &a, const T2 &b, const char
   print(a == b);
 }
 
-// asBytes{{{1
+// PrintMemDecorator{{{1
 template <typename T> struct PrintMemDecorator {
   T x;
 };
-template <typename T> PrintMemDecorator<T> asBytes(const T &x) { return {x}; }
 
 // printFuzzyInfo specializations for float and double {{{1
 template <typename T> inline void Compare::printFuzzyInfo(T a, T b)
@@ -1050,65 +1027,6 @@ template <typename T> inline void Compare::writePlotData(std::fstream &file, T a
   writePlotDataImpl(Vc::is_datapar<T>(), file, ref, dist);
 }
 
-// FUZZY_COMPARE {{{1
-// Workaround for clang: The "<< ' '" is only added to silence the warnings
-// about unused return values.
-#define FUZZY_COMPARE(a, b)                                                              \
-  vir::test::Compare(a, b, #a, #b, __FILE__, __LINE__, vir::test::Compare::Fuzzy()) << ' '
-// COMPARE_ABSOLUTE_ERROR {{{1
-#define COMPARE_ABSOLUTE_ERROR(a_, b_, error_)                                           \
-  vir::test::Compare(a_, b_, #a_, #b_, __FILE__, __LINE__,                               \
-                     vir::test::Compare::AbsoluteError(), error_)                        \
-      << ' '
-// COMPARE_RELATIVE_ERROR {{{1
-#define COMPARE_RELATIVE_ERROR(a_, b_, error_)                                           \
-  vir::test::Compare(a_, b_, #a_, #b_, __FILE__, __LINE__,                               \
-                     vir::test::Compare::RelativeError(), error_)                        \
-      << ' '
-// COMPARE {{{1
-#define COMPARE(a, b) vir::test::Compare(a, b, #a, #b, __FILE__, __LINE__) << ' '
-// COMPARE_NOEQ {{{1
-#define COMPARE_NOEQ(a, b)                                                               \
-  vir::test::Compare(a, b, #a, #b, __FILE__, __LINE__, vir::test::Compare::NoEq()) << ' '
-// MEMCOMPARE {{{1
-#define MEMCOMPARE(a, b)                                                                 \
-  vir::test::Compare(a, b, #a, #b, __FILE__, __LINE__, vir::test::Compare::Mem()) << ' '
-// VERIFY {{{1
-#define VERIFY(cond) vir::test::Compare(cond, #cond, __FILE__, __LINE__) << ' '
-// FAIL {{{1
-#define FAIL() vir::test::Compare(__FILE__, __LINE__) << ' '
-
-// SKIP {{{1
-class SKIP
-{
-  std::stringstream stream;
-
-public:
-  ~SKIP() noexcept(false) { throw SkippedTest{stream.str()}; }
-  template <typename T> SKIP &operator<<(T &&x)
-  {
-    stream << std::forward<T>(x);
-    return *this;
-  }
-};
-
-// ADD_PASS() << "text" {{{1
-class ADD_PASS
-{
-public:
-  ADD_PASS()
-  {
-    ++global_unit_test_object_.passedTests;
-    printPass();
-  }
-  ~ADD_PASS() { std::cout << std::endl; }
-  template <typename T> ADD_PASS &operator<<(const T &x)
-  {
-    std::cout << x;
-    return *this;
-  }
-};
-
 // assert_impl (called from assert macro) {{{1
 inline void assert_impl(bool ok, const char *code, const char *file, int line)
 {
@@ -1121,17 +1039,6 @@ inline void assert_impl(bool ok, const char *code, const char *file, int line)
   }
 }
 
-// expect_assert_failure {{{1
-template <class F> inline void expect_assert_failure(F &&f)
-{
-  global_unit_test_object_.expect_assert_failure = true;
-  std::forward<F>(f)();
-  global_unit_test_object_.expect_assert_failure = false;
-}
-//}}}1
-
-namespace detail
-{
 // TestData {{{1
 struct TestData {
   template <class F, class S>
@@ -1154,7 +1061,10 @@ struct Test : public TestWrapper {
     } catch (const Exception &e) {
       return;
     }
-    FAIL() << "The test was expected to throw an exception of type '" << typeToString<Exception>() << "', but it did not throw anything.";
+    std::cout << failString() << "The test was expected to throw an exception of type '"
+              << typeToString<Exception>() << "', but it did not throw anything." << std::endl;
+    global_unit_test_object_.status = false;
+    throw UnitTestFailure();
   }
 
   Test(std::string name) { allTests.emplace_back(wrapper, std::move(name)); }
@@ -1194,16 +1104,123 @@ template <typename... Ts> Typelist<Ts...> hackTypelist(void (*)(Typelist<Ts...>)
 
 //}}}1
 }  // namespace detail
-void runAll() //{{{1
+
+// setFuzzyness {{{1
+template <typename T> inline void setFuzzyness(T fuzz)
 {
-  for (const auto &data : detail::allTests) {
-    global_unit_test_object_.runTestInt(data.f, data.name.c_str());
+  detail::global_unit_test_object_.fuzzyness<T>() = fuzz;
+}
+
+// asBytes{{{1
+template <typename T> detail::PrintMemDecorator<T> asBytes(const T &x) { return {x}; }
+
+// FUZZY_COMPARE {{{1
+// Workaround for clang: The "<< ' '" is only added to silence the warnings
+// about unused return values.
+#define FUZZY_COMPARE(a, b)                                                              \
+  vir::test::detail::Compare(a, b, #a, #b, __FILE__, __LINE__,                           \
+                             vir::test::detail::Compare::Fuzzy())                        \
+      << ' '
+// COMPARE_ABSOLUTE_ERROR {{{1
+#define COMPARE_ABSOLUTE_ERROR(a_, b_, error_)                                           \
+  vir::test::detail::Compare(a_, b_, #a_, #b_, __FILE__, __LINE__,                       \
+                             vir::test::detail::Compare::AbsoluteError(), error_)        \
+      << ' '
+// COMPARE_RELATIVE_ERROR {{{1
+#define COMPARE_RELATIVE_ERROR(a_, b_, error_)                                           \
+  vir::test::detail::Compare(a_, b_, #a_, #b_, __FILE__, __LINE__,                       \
+                             vir::test::detail::Compare::RelativeError(), error_)        \
+      << ' '
+// COMPARE {{{1
+#define COMPARE(a, b) vir::test::detail::Compare(a, b, #a, #b, __FILE__, __LINE__) << ' '
+// COMPARE_NOEQ {{{1
+#define COMPARE_NOEQ(a, b)                                                               \
+  vir::test::detail::Compare(a, b, #a, #b, __FILE__, __LINE__,                           \
+                             vir::test::detail::Compare::NoEq())                         \
+      << ' '
+// MEMCOMPARE {{{1
+#define MEMCOMPARE(a, b)                                                                 \
+  vir::test::detail::Compare(a, b, #a, #b, __FILE__, __LINE__,                           \
+                             vir::test::detail::Compare::Mem())                          \
+      << ' '
+// VERIFY {{{1
+#define VERIFY(cond) vir::test::detail::Compare(cond, #cond, __FILE__, __LINE__) << ' '
+// FAIL {{{1
+#define FAIL() vir::test::detail::Compare(__FILE__, __LINE__) << ' '
+
+// SKIP {{{1
+class SKIP
+{
+  std::stringstream stream;
+
+public:
+  ~SKIP() noexcept(false) { throw detail::SkippedTest{stream.str()}; }
+  template <typename T> SKIP &operator<<(T &&x)
+  {
+    stream << std::forward<T>(x);
+    return *this;
+  }
+};
+
+// ADD_PASS() << "text" {{{1
+class ADD_PASS
+{
+public:
+  ADD_PASS()
+  {
+    ++detail::global_unit_test_object_.passedTests;
+    detail::printPass();
+  }
+  ~ADD_PASS() { std::cout << std::endl; }
+  template <typename T> ADD_PASS &operator<<(const T &x)
+  {
+    std::cout << x;
+    return *this;
+  }
+};
+
+// EXPECT_FAILURE {{{1
+void EXPECT_FAILURE() { detail::global_unit_test_object_.expect_failure = true; }
+
+// expect_assert_failure {{{1
+template <class F> inline void expect_assert_failure(F &&f)
+{
+  detail::global_unit_test_object_.expect_assert_failure = true;
+  std::forward<F>(f)();
+  detail::global_unit_test_object_.expect_assert_failure = false;
+}
+//}}}1
+static void initTest(int argc, char **argv)  //{{{1
+{
+  for (int i = 1; i < argc; ++i) {
+    if (0 == std::strcmp(argv[i], "--help") || 0 == std::strcmp(argv[i], "-h")) {
+      std::cout << "Usage: " << argv[0] << " [-h|--help] [--only <testname>] [-v|--vim] "
+                                           "[--maxdist] [--plotdist <plot.dat>]\n";
+      exit(0);
+    }
+    if (0 == std::strcmp(argv[i], "--only") && i + 1 < argc) {
+      detail::global_unit_test_object_.only_name = argv[i + 1];
+    } else if (0 == std::strcmp(argv[i], "--maxdist")) {
+      detail::global_unit_test_object_.findMaximumDistance = true;
+    } else if (0 == std::strcmp(argv[i], "--plotdist") && i + 1 < argc) {
+      detail::global_unit_test_object_.plotFile.open(argv[i + 1], std::ios_base::out);
+      detail::global_unit_test_object_.plotFile << "# reference\tdistance\n";
+    } else if (0 == std::strcmp(argv[i], "--vim") || 0 == std::strcmp(argv[i], "-v")) {
+      detail::global_unit_test_object_.vim_lines = true;
+    }
   }
 }
 
-int finalize()  //{{{1
+static void runAll() //{{{1
 {
-  return global_unit_test_object_.finalize();
+  for (const auto &data : detail::allTests) {
+    detail::global_unit_test_object_.runTestInt(data.f, data.name.c_str());
+  }
+}
+
+static int finalize()  //{{{1
+{
+  return detail::global_unit_test_object_.finalize();
 }
 
 //}}}1
