@@ -857,20 +857,19 @@ private:
   static VIR_ALWAYS_INLINE size_t getIp()  //{{{2
   {
     size_t _ip;
-#ifdef Vc_GNU_ASM
+#ifdef __GNUC__
 #ifdef __x86_64__
     asm volatile("lea 0(%%rip),%0" : "=r"(_ip));
 #elif defined __i386__
-    // asm volatile("call 1f\n\t1: pop %0" : "=r"(_ip));
     asm volatile("1: movl $1b,%0" : "=r"(_ip));
 #elif defined __arm__
     asm volatile("mov %0,pc" : "=r"(_ip));
 #else
     _ip = 0;
 #endif
-#else
+#else   //__GNUC__
     _ip = 0;
-#endif
+#endif  //__GNUC__
     return _ip;
   }
 
@@ -1261,7 +1260,7 @@ template <typename... Ts> Typelist<Ts...> hackTypelist(void (*)(Typelist<Ts...>)
 #endif
 
 int
-#ifdef Vc_MSVC
+#ifdef _MSC_VER
 __cdecl
 #endif
 main(int argc, char **argv)  //{{{1

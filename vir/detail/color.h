@@ -32,10 +32,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ostream>
 
 #if defined(__GNUC__) && !defined(_WIN32) && defined(_GLIBCXX_OSTREAM)
-#define Vc_HACK_OSTREAM_FOR_TTY 1
+#define VIR_HACK_OSTREAM_FOR_TTY 1
 #endif
 
-#ifdef Vc_HACK_OSTREAM_FOR_TTY
+#ifdef VIR_HACK_OSTREAM_FOR_TTY
 #include <unistd.h>
 #include <ext/stdio_sync_filebuf.h>
 #endif
@@ -44,7 +44,7 @@ namespace vir
 {
 namespace detail
 {
-#ifdef Vc_HACK_OSTREAM_FOR_TTY
+#ifdef VIR_HACK_OSTREAM_FOR_TTY
 static bool isATty(const std::ostream &os)
 {
   __gnu_cxx::stdio_sync_filebuf<char> *hack =
