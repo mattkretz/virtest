@@ -36,7 +36,7 @@ TEST(sanity_checks)  //{{{1
   COMPARE(1, 1);
 
   struct NotComparable {
-    int x = -0xdeadbeef;
+    unsigned int x = 0xdeadbeef;
   };
   COMPARE(NotComparable(), NotComparable());  // compares with memcmp
 }
