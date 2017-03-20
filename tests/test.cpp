@@ -39,6 +39,19 @@ TEST(sanity_checks)  //{{{1
     unsigned int x = 0xdeadbeef;
   };
   COMPARE(NotComparable(), NotComparable());  // compares with memcmp
+
+  ADD_PASS() << "extra PASS\nwith newline";
+}
+
+TEST(skip)  //{{{1
+{
+  SKIP() << "\"output string\nwith newline\"";
+}
+
+TEST(xfail)  //{{{1
+{
+  EXPECT_FAILURE();
+  COMPARE(1, 2) << "\"output string\nwith newline\"";
 }
 
 TEST(type_to_string)  //{{{1

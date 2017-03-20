@@ -1073,14 +1073,14 @@ template <typename T> inline void Compare::writePlotData(std::fstream &file, T a
 // FAIL {{{1
 #define FAIL() vir::test::Compare(__FILE__, __LINE__) << ' '
 
-// Skip {{{1
-class Skip
+// SKIP {{{1
+class SKIP
 {
   std::stringstream stream;
 
 public:
-  ~Skip() noexcept(false) { throw SkippedTest{stream.str()}; }
-  template <typename T> Skip &operator<<(T &&x)
+  ~SKIP() noexcept(false) { throw SkippedTest{stream.str()}; }
+  template <typename T> SKIP &operator<<(T &&x)
   {
     stream << std::forward<T>(x);
     return *this;
@@ -1206,6 +1206,11 @@ int finalize()  //{{{1
 }  // namespace vir
 
 // TEST_TYPES / TEST_CATCH / TEST macros {{{1
+namespace Tests
+{
+using namespace vir::test;
+}
+
 #define REAL_TEST_TYPES(V_, name_, typelist_)                                            \
   namespace Tests                                                                        \
   {                                                                                      \
