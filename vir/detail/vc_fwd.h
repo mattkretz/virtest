@@ -28,15 +28,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef VIR_DETAIL_VC_FWD_H_
 #define VIR_DETAIL_VC_FWD_H_
 
-#ifdef __INTEL_COMPILER
-namespace Vc_2
-{
-#else
 namespace Vc
 {
 inline namespace v2
 {
-#endif
 
 namespace datapar_abi
 {
@@ -54,12 +49,7 @@ template <class T> struct is_mask;
 template <class T, class Abi> class datapar;
 template <class T, class Abi> class mask;
 
-#ifdef __INTEL_COMPILER
-}  // namespace Vc_2
-namespace Vc = Vc_2;
-#else
 }  // inline namespace v2
 }  // namespace Vc
-#endif
 
 #endif  // VIR_DETAIL_VC_FWD_H_
