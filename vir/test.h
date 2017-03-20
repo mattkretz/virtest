@@ -33,15 +33,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "detail/color.h"
 #include "detail/ulp.h"
 #include "detail/type_traits.h"
+#include <array>
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
-#include <random>
 #include <sstream>
-#include <tuple>
 #include <typeinfo>
 #include <vector>
 #ifdef HAVE_CXX_ABI_H
@@ -241,7 +240,6 @@ namespace test
 {
 // using statements {{{1
 using std::vector;
-using std::tuple;
 using std::get;
 
 // value_type_or_T {{{1
@@ -877,7 +875,7 @@ private:
   template <typename T> static void printMem(const T &x)  // {{{2
   {
     constexpr std::size_t length = sizeof(T) * 2 + sizeof(T) / 4;
-    std::unique_ptr<char[]> tmp{new char[length + 3]};
+    std::array<char, length + 3> tmp;
     tmp[0] = '0';
     tmp[1] = 'x';
     char *s = &tmp[2];
@@ -889,7 +887,7 @@ private:
       s[i * 2 + i / 4] = hexChar(bytes[i] >> 4);
       s[i * 2 + 1 + i / 4] = hexChar(bytes[i] & 0xf);
     }
-    std::cout << tmp.get();
+    std::cout << tmp.data();
   }
 
   // printFailure {{{2
@@ -951,13 +949,11 @@ private:
         }
         print(&str[1]);
       } else {
-        char *left = strdup(str);
-        left[pos - str] = '\0';
+        const std::string left(str, pos - str);
         std::cout << left << '\n' << failString();
         if (!global_unit_test_object_.vim_lines) {
           std::cout << "│ ";
         }
-        free(left);
         print(&pos[1]);
       }
     } else {
@@ -1128,16 +1124,17 @@ template <class F> inline void expect_assert_failure(F &&f)
   global_unit_test_object_.expect_assert_failure = false;
 }
 
-// runAll and TestData {{{1
-typedef tuple<TestFunction, std::string> TestData;
-vector<TestData> g_allTests;
-
-void runAll()
-{
-  for (const auto &data : g_allTests) {
-    global_unit_test_object_.runTestInt(get<0>(data), get<1>(data).c_str());
+// TestData {{{1
+struct TestData {
+  template <class F, class S>
+  TestData(F &&f_, S &&name_)
+      : f(std::forward<F>(f_)), name(std::forward<S>(name_))
+  {
   }
-}
+  TestFunction f;
+  std::string name;
+};
+vector<TestData> allTests;
 
 // class Test {{{1
 template <typename TestWrapper, typename Exception = void>
@@ -1152,11 +1149,11 @@ struct Test : public TestWrapper {
     FAIL() << "Test was expected to throw, but it didn't";
   }
 
-  Test(std::string name) { g_allTests.emplace_back(wrapper, std::move(name)); }
+  Test(std::string name) { allTests.emplace_back(wrapper, std::move(name)); }
 };
 
 template <typename TestWrapper> struct Test<TestWrapper, void> : public TestWrapper {
-  Test(std::string name) { g_allTests.emplace_back(&TestWrapper::run, std::move(name)); }
+  Test(std::string name) { allTests.emplace_back(&TestWrapper::run, std::move(name)); }
 };
 
 // addTestInstantiations {{{1
@@ -1175,7 +1172,7 @@ static int addTestInstantiations(const char *basename, Typelist<Ts...>,
   std::string name(basename);
   name += '<';
   const auto &x = {
-      0, (g_allTests.emplace_back(&TestWrapper<TypeAtIndex<I, Indexer>>::run,
+      0, (allTests.emplace_back(&TestWrapper<TypeAtIndex<I, Indexer>>::run,
                                   name + typeToString<TypeAtIndex<I, Indexer>>() + '>'),
           0)...};
   auto &&unused = [](decltype(x)) {};
@@ -1186,6 +1183,13 @@ static int addTestInstantiations(const char *basename, Typelist<Ts...>,
 // hackTypelist {{{1
 template <typename... Ts> Typelist<Ts...> hackTypelist(void (*)(Ts...));
 template <typename... Ts> Typelist<Ts...> hackTypelist(void (*)(Typelist<Ts...>));
+
+void runAll() //{{{1
+{
+  for (const auto &data : detail::allTests) {
+    global_unit_test_object_.runTestInt(data.f, data.name.c_str());
+  }
+}
 
 //}}}1
 }  // namespace test
