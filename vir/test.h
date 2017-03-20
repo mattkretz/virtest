@@ -1150,11 +1150,11 @@ struct Test : public TestWrapper {
   static void wrapper()
   {
     try {
-      TestWrapper::test_function();
+      TestWrapper::run();
     } catch (const Exception &e) {
       return;
     }
-    FAIL() << "Test was expected to throw, but it didn't";
+    FAIL() << "The test was expected to throw an exception of type '" << typeToString<Exception>() << "', but it did not throw anything.";
   }
 
   Test(std::string name) { allTests.emplace_back(wrapper, std::move(name)); }

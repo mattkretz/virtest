@@ -54,6 +54,11 @@ TEST(xfail)  //{{{1
   COMPARE(1, 2) << "\"output string\nwith newline\"";
 }
 
+TEST_CATCH(test_catch, int)  //{{{1
+{
+  throw int();
+}
+
 TEST(type_to_string)  //{{{1
 {
   COMPARE((vir::typeToString<std::array<int, 3>>()), "array<   int, 3>");
