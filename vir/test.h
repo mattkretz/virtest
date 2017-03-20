@@ -662,7 +662,7 @@ public:
   template <typename T1, typename T2>
   VIR_ALWAYS_INLINE Compare(const T1 &a, const T2 &b, const char *_a, const char *_b,
                            const char *_file, int _line, NoEq)
-      : m_ip(getIp()), m_failed(!unittest_compareHelper(a, b))
+      : m_ip(getIp()), m_failed(!all_of(a != b))
   {
     if (VIR_IS_UNLIKELY(m_failed)) {
       printFirst();
