@@ -1098,10 +1098,6 @@ static int addTestInstantiations(const char *basename, Typelist<Ts...>,
   return 0;
 }
 
-// hackTypelist {{{1
-template <typename... Ts> Typelist<Ts...> hackTypelist(void (*)(Ts...));
-template <typename... Ts> Typelist<Ts...> hackTypelist(void (*)(Typelist<Ts...>));
-
 //}}}1
 }  // namespace detail
 
@@ -1233,25 +1229,24 @@ namespace Tests
 using namespace vir::test;
 }
 
-#define REAL_TEST_TYPES(V_, name_, typelist_)                                            \
+#define REAL_TEST_TYPES(T_, name_, ...)                                                  \
   namespace Tests                                                                        \
   {                                                                                      \
-  template <typename V_> struct name_##_ {                                               \
+  template <typename T_> struct name_##_ {                                               \
     static void run();                                                                   \
   };                                                                                     \
   static struct name_##_ctor {                                                           \
     name_##_ctor()                                                                       \
     {                                                                                    \
-      using list =                                                                       \
-          decltype(vir::test::detail::hackTypelist(std::declval<void typelist_>()));     \
+      using list = vir::Typelist<__VA_ARGS__>;                                           \
       vir::test::detail::addTestInstantiations<name_##_>(                                \
           #name_, list{}, std::make_index_sequence<list::size()>{});                     \
     }                                                                                    \
   } name_##_ctor_;                                                                       \
   }                                                                                      \
-  template <typename V_> void Tests::name_##_<V_>::run()
+  template <typename T_> void Tests::name_##_<T_>::run()
 
-#define FAKE_TEST_TYPES(V_, name_, typelist_)                                            \
+#define FAKE_TEST_TYPES(V_, name_, ...)                                                  \
   namespace Tests                                                                        \
   {                                                                                      \
   template <typename V_> struct name_##_ {                                               \
@@ -1282,8 +1277,8 @@ using namespace vir::test;
 #define FAKE_TEST_CATCH(name_, exception_) template <typename UnitTesT_T_> void name_()
 
 #ifdef UNITTEST_ONLY_XTEST
-#define TEST_TYPES(V_, name_, typelist_) FAKE_TEST_TYPES(V_, name_, typelist_)
-#define XTEST_TYPES(V_, name_, typelist_) REAL_TEST_TYPES(V_, name_, typelist_)
+#define TEST_TYPES(V_, name_, ...) FAKE_TEST_TYPES(V_, name_, __VA_ARGS__)
+#define XTEST_TYPES(V_, name_, ...) REAL_TEST_TYPES(V_, name_, __VA_ARGS__)
 
 #define TEST(name_) FAKE_TEST(name_)
 #define XTEST(name_) REAL_TEST(name_)
@@ -1291,8 +1286,8 @@ using namespace vir::test;
 #define TEST_CATCH(name_, exception_) FAKE_TEST_CATCH(name_, exception_)
 #define XTEST_CATCH(name_, exception_) REAL_TEST_CATCH(name_, exception_)
 #else
-#define XTEST_TYPES(V_, name_, typelist_) FAKE_TEST_TYPES(V_, name_, typelist_)
-#define TEST_TYPES(V_, name_, typelist_) REAL_TEST_TYPES(V_, name_, typelist_)
+#define XTEST_TYPES(V_, name_, ...) FAKE_TEST_TYPES(V_, name_, __VA_ARGS__)
+#define TEST_TYPES(V_, name_, ...) REAL_TEST_TYPES(V_, name_, __VA_ARGS__)
 
 #define XTEST(name_) FAKE_TEST(name_)
 #define TEST(name_) REAL_TEST(name_)

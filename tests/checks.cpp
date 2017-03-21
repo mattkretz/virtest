@@ -88,7 +88,7 @@ TEST(Typelist)  //{{{1
 
 // test_types[_check]  {{{1
 std::vector<std::string> seen_types;
-TEST_TYPES(T, test_types, (int, float, char))
+TEST_TYPES(T, test_types, int, float, char)
 {
   seen_types.push_back(vir::typeToString<T>());
 }
@@ -100,7 +100,7 @@ TEST(test_types_check)
   COMPARE(seen_types[2], "  char");
 }
 
-TEST_TYPES(T, testUlpDiff, (double, float, long double))  //{{{1
+TEST_TYPES(T, testUlpDiff, double, float, long double)  //{{{1
 {
   using std::numeric_limits;
   using vir::detail::ulpDiffToReference;
