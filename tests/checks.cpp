@@ -78,11 +78,20 @@ TEST(type_to_string)  //{{{1
 struct Test1 {
   template <class T> auto operator()(T x) -> decltype(std::sin(x)) {}
 };
+struct Test2 {
+  template <class T>
+  auto operator()(T x) -> decltype(vir::detail::ulpDiffToReference(x, x))
+  {
+  }
+};
 
 TEST(sfinae_checks)  //{{{1
 {
   VERIFY( sfinae_is_callable(Test1(), float()));  // std::sin(float) is callable
   VERIFY(!sfinae_is_callable(Test1(), Test1()));  // std::sin(Test1) is ill-formed
+
+  VERIFY( sfinae_is_callable(Test2(), float()));  // ulpDiffToReference(float) is callable
+  VERIFY(!sfinae_is_callable(Test2(),   int()));  // ulpDiffToReference(  int) is ill-formed
 }
 
 TEST(Typelist)  //{{{1

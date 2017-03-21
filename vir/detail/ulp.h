@@ -36,6 +36,10 @@ namespace vir
 {
 namespace detail
 {
+template <class T,
+          class = typename std::enable_if<std::is_floating_point<T>::value>::type>
+using FloatingPoint = T;
+
 /**
  * Returns the distance in ULP of \p ref from \p ref to \p val.
  *
@@ -52,8 +56,7 @@ namespace detail
  * bug.
  */
 template <typename T>
-inline typename std::enable_if<std::is_floating_point<T>::value, T>::type
-ulpDiffToReference(T val, T ref)
+inline T ulpDiffToReference(FloatingPoint<T> val, FloatingPoint<T> ref)
 {
   using namespace std;
   using std::isnan;  // work around old libc that defines ::isnan(double)
@@ -119,17 +122,9 @@ ulpDiffToReferenceSigned(const Vc::datapar<T, A> &, const Vc::datapar<T, A> &)
 }
 
 template <typename T>
-inline typename std::enable_if<std::is_floating_point<T>::value, T>::type
-ulpDiffToReferenceSigned(T val, T ref)
+inline T ulpDiffToReferenceSigned(FloatingPoint<T> val, FloatingPoint<T> ref)
 {
   return ulpDiffToReference(val, ref) * (val - ref < 0 ? -1 : 1);
-}
-
-template <typename T>
-inline typename std::enable_if<!std::is_floating_point<T>::value, T>::type
-ulpDiffToReferenceSigned(const T &, const T &)
-{
-  return 0;
 }
 
 }  // namespace detail
