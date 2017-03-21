@@ -54,22 +54,20 @@ template <class... Ts> constexpr bool operator_is_substitution_failure()
 }
 
 // sfinae_is_callable{{{1
-template <class F, class... Args>
-constexpr auto sfinae_is_callable_impl(int, F &&f, Args &&... args) ->
-    typename std::conditional<
-        true, bool, decltype(std::forward<F>(f)(std::forward<Args>(args)...))>::type
+template <class... Args, class F>
+constexpr auto sfinae_is_callable_impl(int, F &&f) ->
+    typename std::conditional<true, bool,
+                              decltype(std::forward<F>(f)(std::declval<Args>()...))>::type
 {
   return true;
 }
-template <class F, class... Args>
-constexpr bool sfinae_is_callable_impl(float, const F &, const Args &...)
+template <class... Args, class F> constexpr bool sfinae_is_callable_impl(float, const F &)
 {
   return false;
 }
-template <class F, class... Args>
-constexpr bool sfinae_is_callable(F &&f, Args &&... args)
+template <class... Args, class F> constexpr bool sfinae_is_callable(F &&f)
 {
-  return sfinae_is_callable_impl(int(), std::forward<F>(f), std::forward<Args>(args)...);
+  return sfinae_is_callable_impl<Args...>(int(), std::forward<F>(f));
 }
 
 // traits {{{1
