@@ -27,6 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <vir/testassert.h>
 #include <vir/test.h>
+#include <vir/metahelpers.h>
 
 #include <cmath>
 #include <limits>
@@ -72,6 +73,16 @@ TEST(type_to_string)  //{{{1
   COMPARE((vir::typeToString<std::integral_constant<int, 3>>()), "integral_constant<3>");
   COMPARE((vir::typeToString<vir::Typelist<>>()), "{}");
   COMPARE((vir::typeToString<vir::Typelist<int, float>>()), "{   int,  float}");
+}
+
+struct Test1 {
+  template <class T> auto operator()(T x) -> decltype(std::sin(x)) {}
+};
+
+TEST(sfinae_checks)  //{{{1
+{
+  VERIFY( sfinae_is_callable(Test1(), float()));  // std::sin(float) is callable
+  VERIFY(!sfinae_is_callable(Test1(), Test1()));  // std::sin(Test1) is ill-formed
 }
 
 TEST(Typelist)  //{{{1
