@@ -1075,23 +1075,13 @@ template <typename TestWrapper> struct Test<TestWrapper, void> : public TestWrap
 };
 
 // addTestInstantiations {{{1
-template <std::size_t I, typename Indexer> struct TypeAtIndexX {
-  typedef decltype(TypelistIndexing::select<I>(Indexer{})) T;
-  using type = typename T::type;
-};
-template <std::size_t I, typename Indexer>
-using TypeAtIndex = typename TypeAtIndexX<I, Indexer>::type;
-
-template <template <typename> class TestWrapper, typename... Ts, std::size_t... I>
-static int addTestInstantiations(const char *basename, Typelist<Ts...>,
-                                 std::index_sequence<I...>)
+template <template <typename> class TestWrapper, typename... Ts>
+static int addTestInstantiations(const char *basename, Typelist<Ts...>)
 {
-  using Indexer = TypelistIndexing::indexer<std::index_sequence<I...>, Ts...>;
   std::string name(basename);
   name += '<';
   const auto &x = {
-      0, (allTests.emplace_back(&TestWrapper<TypeAtIndex<I, Indexer>>::run,
-                                  name + typeToString<TypeAtIndex<I, Indexer>>() + '>'),
+      0, (allTests.emplace_back(&TestWrapper<Ts>::run, name + typeToString<Ts>() + '>'),
           0)...};
   auto &&unused = [](decltype(x)) {};
   unused(x);
@@ -1239,8 +1229,7 @@ using namespace vir::test;
     name_##_ctor()                                                                       \
     {                                                                                    \
       using list = vir::Typelist<__VA_ARGS__>;                                           \
-      vir::test::detail::addTestInstantiations<name_##_>(                                \
-          #name_, list{}, std::make_index_sequence<list::size()>{});                     \
+      vir::test::detail::addTestInstantiations<name_##_>(#name_, list{});                \
     }                                                                                    \
   } name_##_ctor_;                                                                       \
   }                                                                                      \
