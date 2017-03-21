@@ -43,6 +43,15 @@ template <template <typename> class T> struct Template1 {
   template <typename U> using type = T<U>;
 };
 
+// ensure_typelist{{{1
+template <typename... Ts> struct ensure_typelist {
+    using type = Typelist<Ts...>;
+};
+template <typename... Ts> struct ensure_typelist<Typelist<Ts...>> {
+    using type = Typelist<Ts...>;
+};
+template <typename... Ts> using ensure_typelist_t = typename ensure_typelist<Ts...>::type;
+
 // list size{{{1
 template <class T> struct list_size;
 template <class... Ts>

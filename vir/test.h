@@ -1227,7 +1227,10 @@ using namespace vir::test;
   static struct name_##_ctor {                                                           \
     name_##_ctor()                                                                       \
     {                                                                                    \
-      using list = vir::Typelist<__VA_ARGS__>;                                           \
+      using vir::Typelist;                                                               \
+      using vir::concat;                                                                 \
+      using vir::outer_product;                                                          \
+      using list = vir::ensure_typelist_t<__VA_ARGS__>;                                  \
       vir::test::detail::addTestInstantiations<name_##_>(#name_, list{});                \
     }                                                                                    \
   } name_##_ctor_;                                                                       \
