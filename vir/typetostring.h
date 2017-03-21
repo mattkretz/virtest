@@ -53,9 +53,6 @@ template <typename T> inline std::string typeToString();
 
 namespace detail
 {
-// unused{{{1
-template <class T> static constexpr void unused(T &&) {}
-
 // std::array<T, N> {{{1
 template <typename T, std::size_t N>
 inline std::string typeToString_impl(std::array<T, N> *)
@@ -90,8 +87,8 @@ std::string typeToString_impl(Typelist<T0, Ts...> *)
 {
   std::stringstream s;
   s << '{' << typeToString<T0>();
-  auto &&x = {(s << ", " << typeToString<Ts>(), 0)...};
-  unused(x);
+  const auto &x = {(s << ", " << typeToString<Ts>(), 0)...};
+  [](decltype(x)) {}(x);  // silence "x is unused" warning
   s << '}';
   return s.str();
 }

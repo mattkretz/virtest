@@ -1083,8 +1083,7 @@ static int addTestInstantiations(const char *basename, Typelist<Ts...>)
   const auto &x = {
       0, (allTests.emplace_back(&TestWrapper<Ts>::run, name + typeToString<Ts>() + '>'),
           0)...};
-  auto &&unused = [](decltype(x)) {};
-  unused(x);
+  [](decltype(x)) {}(x);  // silence "x is unused" warning
   return 0;
 }
 
