@@ -52,8 +52,8 @@ namespace detail
  * bug.
  */
 template <typename T>
-inline std::enable_if_t<std::is_floating_point<T>::value, T> ulpDiffToReference(T val,
-                                                                                T ref)
+inline typename std::enable_if<std::is_floating_point<T>::value, T>::type
+ulpDiffToReference(T val, T ref)
 {
   using namespace std;
   using std::isnan;  // work around old libc that defines ::isnan(double)
@@ -105,29 +105,29 @@ inline Vc::datapar<T, A> ulpDiffToReference(const Vc::datapar<T, A> &val_,
 }
 
 template <typename T, typename A>
-inline std::enable_if_t<std::is_floating_point<T>::value, Vc::datapar<T, A>>
+inline typename std::enable_if<std::is_floating_point<T>::value, Vc::datapar<T, A>>::type
 ulpDiffToReferenceSigned(const Vc::datapar<T, A> &_val, const Vc::datapar<T, A> &_ref)
 {
   return copysign(ulpDiffToReference(_val, _ref), _val - _ref);
 }
 
 template <typename T, typename A>
-inline std::enable_if_t<!std::is_floating_point<T>::value, Vc::datapar<T, A>>
+inline typename std::enable_if<!std::is_floating_point<T>::value, Vc::datapar<T, A>>::type
 ulpDiffToReferenceSigned(const Vc::datapar<T, A> &, const Vc::datapar<T, A> &)
 {
   return 0;
 }
 
 template <typename T>
-inline std::enable_if_t<std::is_floating_point<T>::value, T> ulpDiffToReferenceSigned(
-    T val, T ref)
+inline typename std::enable_if<std::is_floating_point<T>::value, T>::type
+ulpDiffToReferenceSigned(T val, T ref)
 {
   return ulpDiffToReference(val, ref) * (val - ref < 0 ? -1 : 1);
 }
 
 template <typename T>
-inline std::enable_if_t<!std::is_floating_point<T>::value, T> ulpDiffToReferenceSigned(
-    const T &, const T &)
+inline typename std::enable_if<!std::is_floating_point<T>::value, T>::type
+ulpDiffToReferenceSigned(const T &, const T &)
 {
   return 0;
 }

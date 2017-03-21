@@ -1,7 +1,7 @@
 # Vir's Unit Test Framework
 
 [![license](https://img.shields.io/github/license/mattkretz/virtest.svg)](https://github.com/mattkretz/virtest/blob/master/LICENSE)
-[![language](https://img.shields.io/badge/language-C%2B%2B14-blue.svg)](https://isocpp.org/)
+[![language](https://img.shields.io/badge/language-C%2B%2B11-blue.svg)](https://isocpp.org/)
 
 [![Build Status](https://travis-ci.org/mattkretz/virtest.svg)](https://travis-ci.org/mattkretz/virtest)
 [![Build status](https://ci.appveyor.com/api/projects/status/lxqk5tqs4og6dr3e?svg=true)](https://ci.appveyor.com/project/mattkretz/virtest)

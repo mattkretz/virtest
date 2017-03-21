@@ -38,8 +38,8 @@ namespace detail
 namespace has_equality_operator_impl
 {
 template <typename T, typename U,
-          typename = std::enable_if_t<!std::is_same<
-              void, decltype(std::declval<T>() == std::declval<U>())>::value>>
+          typename = typename std::enable_if<!std::is_same<
+              void, decltype(std::declval<T>() == std::declval<U>())>::value>::type>
 std::true_type test(int);
 template <typename T, typename U> std::false_type test(...);
 }  // namespace has_equality_operator_impl

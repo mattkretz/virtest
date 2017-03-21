@@ -50,7 +50,8 @@ struct list_size<Typelist<Ts...>>
     : public std::integral_constant<std::size_t, sizeof...(Ts)> {
 };
 
-// list indexing{{{1
+// list indexing (C++14){{{1
+#if __cplusplus >= 201402L
 namespace TypelistIndexing
 {
 template <std::size_t I, typename T> struct indexed {
@@ -62,6 +63,7 @@ struct indexer<std::index_sequence<Is...>, Ts...> : indexed<Is, Ts>... {
 };
 template <std::size_t I, typename T> static indexed<I, T> select(indexed<I, T>);
 }  // namespace TypelistIndexing
+#endif  // C++14
 
 // concat {{{1
 template <typename... More> struct concat_impl;
@@ -361,7 +363,7 @@ struct extract_type_impl<N, false, false, T0, T1, T2, T3, Ts...> {
 template <std::size_t N, typename... Ts>
 using extract_type = typename extract_type_impl<N, (N < 4), (N >= 32), Ts...>::type;
 
-template <typename... Ts> struct Typelist {
+template <typename... Ts> struct Typelist {  //{{{1
   template <std::size_t N>
   using at = typename extract_type_impl<N, (N < 4), (N >= 32), Ts...>::type;
 
