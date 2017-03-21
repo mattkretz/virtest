@@ -11,20 +11,6 @@ compiler:
   - gcc
   - clang
 
-addons:
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-    packages:
-      - g++-4.9
-
-before_script:
-  - case "$TRAVIS_OS_NAME-$CXX" in
-    linux-g++) export CXX=g++-4.9 CC=gcc-4.9;;
-    esac
-  - $CXX --version
-  - cmake --version
-
 script:
   - mkdir build
   - cd build
