@@ -56,6 +56,7 @@ inline std::enable_if_t<std::is_floating_point<T>::value, T> ulpDiffToReference(
                                                                                 T ref)
 {
   using namespace std;
+  using std::isnan;  // work around old libc that defines ::isnan(double)
   if (val == ref || (isnan(val) && isnan(ref))) {
     return 0;
   }
