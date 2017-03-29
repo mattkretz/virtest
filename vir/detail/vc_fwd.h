@@ -36,7 +36,7 @@ inline namespace v2
 namespace datapar_abi
 {
 template <int N> struct fixed_size;
-using scalar = fixed_size<1>;
+struct scalar;
 struct sse;
 struct avx;
 struct avx512;
