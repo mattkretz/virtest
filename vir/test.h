@@ -1028,16 +1028,47 @@ template <typename T> inline void Compare::writePlotData(std::fstream &file, T a
 }
 
 // assert_impl (called from assert macro) {{{1
-inline void assert_impl(bool ok, const char *code, const char *file, int line)
-{
-  if (VIR_IS_UNLIKELY(global_unit_test_object_.expect_assert_failure)) {
-    if (ok) {
-      Compare(file, line) << "assert(" << code << ") should have failed.";
+struct assert_impl {
+  VIR_ALWAYS_INLINE assert_impl(bool ok, const char *code, const char *file,
+                                int line)
+  {
+    if (VIR_IS_UNLIKELY(global_unit_test_object_.expect_assert_failure)) {
+      if (ok) {
+        out_ptr = new (&compare_storage) Compare(file, line);
+        *out_ptr << "assert(" << code << ") should have failed.";
+      }
+    } else if (VIR_IS_UNLIKELY(!ok)) {
+      out_ptr = new (&compare_storage) Compare(file, line);
+      *out_ptr << "assert(" << code << ") failed.";
     }
-  } else if (VIR_IS_UNLIKELY(!ok)) {
-    Compare(file, line) << "assert(" << code << ") failed.";
   }
-}
+  VIR_ALWAYS_INLINE ~assert_impl() noexcept(false)
+  {
+    if (VIR_IS_UNLIKELY(out_ptr != nullptr)) {
+      finalize();
+    }
+  }
+  template <class T> VIR_ALWAYS_INLINE assert_impl &operator<<(T &&x)
+  {
+    if (VIR_IS_UNLIKELY(out_ptr != nullptr)) {
+      print(std::forward<T>(x));
+    }
+    return *this;
+  }
+
+private:
+  template <class T> void print(T &&x) const
+  {
+    *out_ptr << std::forward<T>(x);
+  }
+  void finalize() noexcept(false)
+  {
+    out_ptr->~Compare();  // throws
+    out_ptr = nullptr;
+  }
+  typename std::aligned_storage<sizeof(Compare), alignof(Compare)>::type compare_storage;
+  Compare *out_ptr = nullptr;
+};
 
 // TestData {{{1
 struct TestData {

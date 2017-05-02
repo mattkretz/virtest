@@ -41,7 +41,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #undef assert
 #define assert(expr) vir::test::detail::assert_impl(expr, #expr, __FILE__, __LINE__)
 
-#define Vc_ASSERT(expr) vir::test::detail::assert_impl(expr, #expr, __FILE__, __LINE__);
+#define Vc_ASSERT(expr) vir::test::detail::assert_impl(expr, #expr, __FILE__, __LINE__)
 
 namespace vir
 {
@@ -49,7 +49,7 @@ namespace test
 {
 namespace detail
 {
-inline void assert_impl(bool ok, const char *code, const char *file, int line);
+struct assert_impl;
 }  // namespace detail
 }  // namespace test
 }  // namespace vir
