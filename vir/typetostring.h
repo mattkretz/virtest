@@ -47,15 +47,25 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #  define VIR_HAVE_CXXABI_H 1
 #endif // __has_include
 
+#if defined __cpp_return_type_deduction && __cpp_return_type_deduction
+#define VIR_HAVE_CONSTEXPR_TYPESTRINGS 1
+#define VIR_AUTO_OR_STRING constexpr auto
+#define VIR_CONSTEXPR_STRING_RET(N_) constexpr constexpr_string<N_>
+#else
+#define VIR_AUTO_OR_STRING inline std::string
+#define VIR_CONSTEXPR_STRING_RET(N_) inline std::string
+#endif
+
 namespace vir
 {
 namespace detail
 {
-template <typename T> constexpr auto typeToStringRecurse();
+template <typename T> VIR_AUTO_OR_STRING typeToStringRecurse();
 
 template <int N> class constexpr_string
 {
-  const std::array<char, N> chars;
+#ifdef VIR_HAVE_CONSTEXPR_TYPESTRINGS
+  const std::array<char, N + 1> chars;
   static constexpr std::make_index_sequence<N> index_seq{};
 
   template <int M, std::size_t... Ls, std::size_t... Rs>
@@ -67,7 +77,7 @@ template <int N> class constexpr_string
   }
 
 public:
-  constexpr constexpr_string(const char c) : chars{c} {}
+  constexpr constexpr_string(const char c) : chars{c, '\0'} {}
   constexpr constexpr_string(const std::initializer_list<char> &c)
       : constexpr_string(&*c.begin(), index_seq)
   {
@@ -75,7 +85,7 @@ public:
   constexpr constexpr_string(const char str[N]) : constexpr_string(str, index_seq) {}
   template <std::size_t... Is>
   constexpr constexpr_string(const char str[N], std::index_sequence<Is...>)
-      : chars{str[Is]...}
+      : chars{str[Is]..., '\0'}
   {
   }
 
@@ -87,92 +97,122 @@ public:
 
   constexpr char operator[](size_t i) const { return chars[i]; }
   operator std::string() const { return {&chars[0], N}; }
+  const char *c_str() const { return chars.data(); }
 
   friend std::string operator+(const std::string &lhs, const constexpr_string &rhs)
   {
-    return lhs + static_cast<std::string>(rhs);
+    return lhs + rhs.c_str();
   }
   friend std::string operator+(const constexpr_string &lhs, const std::string &rhs)
   {
-    return static_cast<std::string>(lhs) + rhs;
+    return lhs.c_str() + rhs;
   }
 
   friend std::ostream &operator<<(std::ostream &lhs, const constexpr_string &rhs)
   {
     return lhs.write(&rhs.chars[0], N);
   }
+#else
+  constexpr_string(std::string &&tmp) : s(std::move(tmp)) {}
+public:
+  std::string s;
+  constexpr_string(const char c) : s(1, c) {}
+  constexpr_string(const std::initializer_list<char> &c) : s(&*c.begin(), c.size()) {}
+  constexpr_string(const char str[N]) : s(str, N) {}
+  template <int M>
+  constexpr constexpr_string<N + M> operator+(const constexpr_string<M> &rhs) const
+  {
+    return s + rhs.s;
+  }
+  constexpr char operator[](size_t i) const { return s[i]; }
+  operator std::string() const { return s; }
+  const char *c_str() const { return s.c_str(); }
+  friend std::string operator+(const std::string &lhs, const constexpr_string &rhs)
+  {
+    return lhs + rhs.s;
+  }
+  friend std::string operator+(const constexpr_string &lhs, const std::string &rhs)
+  {
+    return lhs.s + rhs;
+  }
+
+  friend std::ostream &operator<<(std::ostream &lhs, const constexpr_string &rhs)
+  {
+    return lhs << rhs.s;
+  }
+#endif
 };
 
-constexpr constexpr_string<1> number_to_string(std::integral_constant<int, 0>) { return '0'; }
-constexpr constexpr_string<1> number_to_string(std::integral_constant<int, 1>) { return '1'; }
-constexpr constexpr_string<1> number_to_string(std::integral_constant<int, 2>) { return '2'; }
-constexpr constexpr_string<1> number_to_string(std::integral_constant<int, 3>) { return '3'; }
-constexpr constexpr_string<1> number_to_string(std::integral_constant<int, 4>) { return '4'; }
-constexpr constexpr_string<1> number_to_string(std::integral_constant<int, 5>) { return '5'; }
-constexpr constexpr_string<1> number_to_string(std::integral_constant<int, 6>) { return '6'; }
-constexpr constexpr_string<1> number_to_string(std::integral_constant<int, 7>) { return '7'; }
-constexpr constexpr_string<1> number_to_string(std::integral_constant<int, 8>) { return '8'; }
-constexpr constexpr_string<1> number_to_string(std::integral_constant<int, 9>) { return '9'; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 10>) { return "10"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 11>) { return "11"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 12>) { return "12"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 13>) { return "13"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 14>) { return "14"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 15>) { return "15"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 16>) { return "16"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 17>) { return "17"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 18>) { return "18"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 19>) { return "19"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 20>) { return "20"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 21>) { return "21"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 22>) { return "22"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 23>) { return "23"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 24>) { return "24"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 25>) { return "25"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 26>) { return "26"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 27>) { return "27"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 28>) { return "28"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 29>) { return "29"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 30>) { return "30"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 31>) { return "31"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 32>) { return "32"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 33>) { return "33"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 34>) { return "34"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 35>) { return "35"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 36>) { return "36"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 37>) { return "37"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 38>) { return "38"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 39>) { return "39"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 40>) { return "40"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 41>) { return "41"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 42>) { return "42"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 43>) { return "43"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 44>) { return "44"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 45>) { return "45"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 46>) { return "46"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 47>) { return "47"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 48>) { return "48"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 49>) { return "49"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 50>) { return "50"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 51>) { return "51"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 52>) { return "52"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 53>) { return "53"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 54>) { return "54"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 55>) { return "55"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 56>) { return "56"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 57>) { return "57"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 58>) { return "58"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 59>) { return "59"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 60>) { return "60"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 61>) { return "61"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 62>) { return "62"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 63>) { return "63"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 64>) { return "64"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 65>) { return "65"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 66>) { return "66"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 67>) { return "67"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 68>) { return "68"; }
-constexpr constexpr_string<2> number_to_string(std::integral_constant<int, 69>) { return "69"; }
+VIR_CONSTEXPR_STRING_RET(1) number_to_string(std::integral_constant<int, 0>) { return "0"; }
+VIR_CONSTEXPR_STRING_RET(1) number_to_string(std::integral_constant<int, 1>) { return "1"; }
+VIR_CONSTEXPR_STRING_RET(1) number_to_string(std::integral_constant<int, 2>) { return "2"; }
+VIR_CONSTEXPR_STRING_RET(1) number_to_string(std::integral_constant<int, 3>) { return "3"; }
+VIR_CONSTEXPR_STRING_RET(1) number_to_string(std::integral_constant<int, 4>) { return "4"; }
+VIR_CONSTEXPR_STRING_RET(1) number_to_string(std::integral_constant<int, 5>) { return "5"; }
+VIR_CONSTEXPR_STRING_RET(1) number_to_string(std::integral_constant<int, 6>) { return "6"; }
+VIR_CONSTEXPR_STRING_RET(1) number_to_string(std::integral_constant<int, 7>) { return "7"; }
+VIR_CONSTEXPR_STRING_RET(1) number_to_string(std::integral_constant<int, 8>) { return "8"; }
+VIR_CONSTEXPR_STRING_RET(1) number_to_string(std::integral_constant<int, 9>) { return "9"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 10>) { return "10"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 11>) { return "11"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 12>) { return "12"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 13>) { return "13"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 14>) { return "14"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 15>) { return "15"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 16>) { return "16"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 17>) { return "17"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 18>) { return "18"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 19>) { return "19"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 20>) { return "20"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 21>) { return "21"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 22>) { return "22"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 23>) { return "23"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 24>) { return "24"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 25>) { return "25"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 26>) { return "26"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 27>) { return "27"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 28>) { return "28"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 29>) { return "29"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 30>) { return "30"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 31>) { return "31"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 32>) { return "32"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 33>) { return "33"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 34>) { return "34"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 35>) { return "35"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 36>) { return "36"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 37>) { return "37"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 38>) { return "38"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 39>) { return "39"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 40>) { return "40"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 41>) { return "41"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 42>) { return "42"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 43>) { return "43"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 44>) { return "44"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 45>) { return "45"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 46>) { return "46"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 47>) { return "47"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 48>) { return "48"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 49>) { return "49"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 50>) { return "50"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 51>) { return "51"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 52>) { return "52"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 53>) { return "53"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 54>) { return "54"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 55>) { return "55"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 56>) { return "56"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 57>) { return "57"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 58>) { return "58"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 59>) { return "59"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 60>) { return "60"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 61>) { return "61"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 62>) { return "62"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 63>) { return "63"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 64>) { return "64"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 65>) { return "65"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 66>) { return "66"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 67>) { return "67"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 68>) { return "68"; }
+VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 69>) { return "69"; }
 // fallback
 template <int N> inline std::string number_to_string(std::integral_constant<int, N>)
 {
@@ -181,57 +221,64 @@ template <int N> inline std::string number_to_string(std::integral_constant<int,
 
 // std::array<T, N> {{{1
 template <typename T, std::size_t N>
-constexpr auto typeToString_impl(std::array<T, N> *)
+VIR_AUTO_OR_STRING typeToString_impl(std::array<T, N> *)
 {
   return constexpr_string<6>("array<") + typeToStringRecurse<T>() + constexpr_string<2>(", ") +
          number_to_string(std::integral_constant<int, N>()) + constexpr_string<1>('>');
 }
 
 // std::vector<T> {{{1
-template <typename T> constexpr auto typeToString_impl(std::vector<T> *)
+template <typename T> VIR_AUTO_OR_STRING typeToString_impl(std::vector<T> *)
 {
   return constexpr_string<7>("vector<") + typeToStringRecurse<T>() + constexpr_string<1>('>');
 }
 
 // std::integral_constant<T, N> {{{1
 template <typename T, T N>
-constexpr auto typeToString_impl(std::integral_constant<T, N> *)
+VIR_AUTO_OR_STRING typeToString_impl(std::integral_constant<T, N> *)
 {
   return constexpr_string<18>("integral_constant<") +
          number_to_string(std::integral_constant<int, N>()) + constexpr_string<1>('>');
 }
 
 // template parameter pack to a comma separated string {{{1
-constexpr_string<2> typeToString_impl(Typelist<> *) { return "{}"; }
-
-template <typename T0, typename... Ts>
-std::string typeToString_impl(Typelist<T0, Ts...> *)
+VIR_AUTO_OR_STRING typelistToStringRecursive()
 {
-  std::stringstream s;
-  s << '{' << typeToStringRecurse<T0>();
-  const auto &x = {(s << ", " << typeToStringRecurse<Ts>(), 0)...};
-  [](decltype(x)) {}(x);  // silence "x is unused" warning
-  s << '}';
-  return s.str();
+  return constexpr_string<1>("}");
+}
+template <typename T0, typename... Ts>
+VIR_AUTO_OR_STRING typelistToStringRecursive(T0 *, Ts *...)
+{
+  return constexpr_string<2>(", ") + typeToStringRecurse<T0>() +
+         typelistToStringRecursive(typename std::add_pointer<Ts>::type()...);
 }
 
+template <typename T0, typename... Ts>
+VIR_AUTO_OR_STRING typeToString_impl(Typelist<T0, Ts...> *)
+{
+  return constexpr_string<1>("{") + typeToStringRecurse<T0>() +
+         typelistToStringRecursive(typename std::add_pointer<Ts>::type()...);
+}
+
+VIR_CONSTEXPR_STRING_RET(2) typeToString_impl(Typelist<> *) { return "{}"; }
+
 // Vc::datapar to string {{{1
-template <int N> constexpr auto typeToString_impl(Vc::datapar_abi::fixed_size<N> *)
+template <int N> VIR_AUTO_OR_STRING typeToString_impl(Vc::datapar_abi::fixed_size<N> *)
 {
   return number_to_string(std::integral_constant<int, N>());
 }
-constexpr constexpr_string<6> typeToString_impl(Vc::datapar_abi::scalar *) { return "scalar"; }
-constexpr constexpr_string<3> typeToString_impl(Vc::datapar_abi::sse *) { return "sse"; }
-constexpr constexpr_string<3> typeToString_impl(Vc::datapar_abi::avx *) { return "avx"; }
-constexpr constexpr_string<6> typeToString_impl(Vc::datapar_abi::avx512 *) { return "avx512"; }
-constexpr constexpr_string<3> typeToString_impl(Vc::datapar_abi::knc *) { return "knc"; }
-constexpr constexpr_string<4> typeToString_impl(Vc::datapar_abi::neon *) { return "neon"; }
-template <class T, class A> constexpr auto typeToString_impl(Vc::datapar<T, A> *)
+VIR_CONSTEXPR_STRING_RET(6) typeToString_impl(Vc::datapar_abi::scalar *) { return "scalar"; }
+VIR_CONSTEXPR_STRING_RET(3) typeToString_impl(Vc::datapar_abi::sse *) { return "sse"; }
+VIR_CONSTEXPR_STRING_RET(3) typeToString_impl(Vc::datapar_abi::avx *) { return "avx"; }
+VIR_CONSTEXPR_STRING_RET(6) typeToString_impl(Vc::datapar_abi::avx512 *) { return "avx512"; }
+VIR_CONSTEXPR_STRING_RET(3) typeToString_impl(Vc::datapar_abi::knc *) { return "knc"; }
+VIR_CONSTEXPR_STRING_RET(4) typeToString_impl(Vc::datapar_abi::neon *) { return "neon"; }
+template <class T, class A> VIR_AUTO_OR_STRING typeToString_impl(Vc::datapar<T, A> *)
 {
   return constexpr_string<8>("datapar<") + typeToStringRecurse<T>() + constexpr_string<2>(", ") +
          typeToStringRecurse<A>() + constexpr_string<1>('>');
 }
-template <class T, class A> constexpr auto typeToString_impl(Vc::mask<T, A> *)
+template <class T, class A> VIR_AUTO_OR_STRING typeToString_impl(Vc::mask<T, A> *)
 {
   return constexpr_string<5>("mask<") + typeToStringRecurse<T>() + constexpr_string<2>(", ") +
          typeToStringRecurse<A>() + constexpr_string<1>('>');
@@ -250,23 +297,24 @@ template <typename T> inline std::string typeToString_impl(T *)
 #endif
 }
 
-constexpr constexpr_string<0> typeToString_impl(void *);// { return ""; }
-constexpr constexpr_string<6> typeToString_impl(long double *) { return "ldoubl"; }
-constexpr constexpr_string<6> typeToString_impl(double *) { return "double"; }
-constexpr constexpr_string<6> typeToString_impl(float *) { return " float"; }
-constexpr constexpr_string<6> typeToString_impl(long long *) { return " llong"; }
-constexpr constexpr_string<6> typeToString_impl(unsigned long long *) { return "ullong"; }
-constexpr constexpr_string<6> typeToString_impl(long *) { return "  long"; }
-constexpr constexpr_string<6> typeToString_impl(unsigned long *) { return " ulong"; }
-constexpr constexpr_string<6> typeToString_impl(int *) { return "   int"; }
-constexpr constexpr_string<6> typeToString_impl(unsigned int *) { return "  uint"; }
-constexpr constexpr_string<6> typeToString_impl(short *) { return " short"; }
-constexpr constexpr_string<6> typeToString_impl(unsigned short *) { return "ushort"; }
-constexpr constexpr_string<6> typeToString_impl(char *) { return "  char"; }
-constexpr constexpr_string<6> typeToString_impl(unsigned char *) { return " uchar"; }
-constexpr constexpr_string<6> typeToString_impl(signed char *) { return " schar"; }
+VIR_CONSTEXPR_STRING_RET(0) typeToString_impl(void *);// { return ""; }
+VIR_CONSTEXPR_STRING_RET(6) typeToString_impl(long double *) { return "ldoubl"; }
+VIR_CONSTEXPR_STRING_RET(6) typeToString_impl(double *) { return "double"; }
+VIR_CONSTEXPR_STRING_RET(6) typeToString_impl(float *) { return " float"; }
+VIR_CONSTEXPR_STRING_RET(6) typeToString_impl(long long *) { return " llong"; }
+VIR_CONSTEXPR_STRING_RET(6) typeToString_impl(unsigned long long *) { return "ullong"; }
+VIR_CONSTEXPR_STRING_RET(6) typeToString_impl(long *) { return "  long"; }
+VIR_CONSTEXPR_STRING_RET(6) typeToString_impl(unsigned long *) { return " ulong"; }
+VIR_CONSTEXPR_STRING_RET(6) typeToString_impl(int *) { return "   int"; }
+VIR_CONSTEXPR_STRING_RET(6) typeToString_impl(unsigned int *) { return "  uint"; }
+VIR_CONSTEXPR_STRING_RET(6) typeToString_impl(short *) { return " short"; }
+VIR_CONSTEXPR_STRING_RET(6) typeToString_impl(unsigned short *) { return "ushort"; }
+VIR_CONSTEXPR_STRING_RET(6) typeToString_impl(char *) { return "  char"; }
+VIR_CONSTEXPR_STRING_RET(6) typeToString_impl(unsigned char *) { return " uchar"; }
+VIR_CONSTEXPR_STRING_RET(6) typeToString_impl(signed char *) { return " schar"; }
+VIR_CONSTEXPR_STRING_RET(6) typeToString_impl(bool *) { return "  bool"; }
 
-template <typename T> constexpr auto typeToStringRecurse()
+template <typename T> VIR_AUTO_OR_STRING typeToStringRecurse()
 {
   using tag = T *;
   return typeToString_impl(tag());
@@ -275,11 +323,10 @@ template <typename T> constexpr auto typeToStringRecurse()
 }  // namespace detail
 
 // typeToString specializations {{{1
-template <typename T> static std::string typeToString()
+template <typename T> inline std::string typeToString()
 {
   using tag = T *;
-  static const std::string tmp = detail::typeToString_impl(tag());
-  return tmp;
+  return detail::typeToString_impl(tag());
 }
 
 //}}}1
