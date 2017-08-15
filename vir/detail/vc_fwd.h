@@ -47,7 +47,7 @@ struct neon;
 template <class T> struct is_simd;
 template <class T> struct is_mask;
 template <class T, class Abi> class simd;
-template <class T, class Abi> class mask;
+template <class T, class Abi> class simd_mask;
 
 }  // inline namespace v2
 }  // namespace Vc

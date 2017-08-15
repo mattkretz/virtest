@@ -285,9 +285,9 @@ template <class T, class A> VIR_AUTO_OR_STRING typeToString_impl(Vc::simd<T, A> 
   return "simd<"_cs + typeToStringRecurse<T>() + ", "_cs + typeToStringRecurse<A>() +
          '>'_cs;
 }
-template <class T, class A> VIR_AUTO_OR_STRING typeToString_impl(Vc::mask<T, A> *)
+template <class T, class A> VIR_AUTO_OR_STRING typeToString_impl(Vc::simd_mask<T, A> *)
 {
-  return "mask<"_cs + typeToStringRecurse<T>() + ", "_cs + typeToStringRecurse<A>() +
+  return "simd_mask<"_cs + typeToStringRecurse<T>() + ", "_cs + typeToStringRecurse<A>() +
          '>'_cs;
 }
 
