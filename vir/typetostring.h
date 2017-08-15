@@ -143,6 +143,13 @@ public:
 #endif
 };
 
+template <typename T, T... chars>
+constexpr constexpr_string<sizeof...(chars)> operator"" _cs()
+{
+  return {chars...};
+}
+constexpr constexpr_string<1> operator"" _cs(char c) { return c; }
+
 VIR_CONSTEXPR_STRING_RET(1) number_to_string(std::integral_constant<int, 0>) { return "0"; }
 VIR_CONSTEXPR_STRING_RET(1) number_to_string(std::integral_constant<int, 1>) { return "1"; }
 VIR_CONSTEXPR_STRING_RET(1) number_to_string(std::integral_constant<int, 2>) { return "2"; }
@@ -223,40 +230,40 @@ template <int N> inline std::string number_to_string(std::integral_constant<int,
 template <typename T, std::size_t N>
 VIR_AUTO_OR_STRING typeToString_impl(std::array<T, N> *)
 {
-  return constexpr_string<6>("array<") + typeToStringRecurse<T>() + constexpr_string<2>(", ") +
-         number_to_string(std::integral_constant<int, N>()) + constexpr_string<1>('>');
+  return "array<"_cs + typeToStringRecurse<T>() + ", "_cs +
+         number_to_string(std::integral_constant<int, N>()) + '>'_cs;
 }
 
 // std::vector<T> {{{1
 template <typename T> VIR_AUTO_OR_STRING typeToString_impl(std::vector<T> *)
 {
-  return constexpr_string<7>("vector<") + typeToStringRecurse<T>() + constexpr_string<1>('>');
+  return "vector<"_cs + typeToStringRecurse<T>() + '>'_cs;
 }
 
 // std::integral_constant<T, N> {{{1
 template <typename T, T N>
 VIR_AUTO_OR_STRING typeToString_impl(std::integral_constant<T, N> *)
 {
-  return constexpr_string<18>("integral_constant<") +
-         number_to_string(std::integral_constant<int, N>()) + constexpr_string<1>('>');
+  return "integral_constant<"_cs + number_to_string(std::integral_constant<int, N>()) +
+         '>'_cs;
 }
 
 // template parameter pack to a comma separated string {{{1
 VIR_AUTO_OR_STRING typelistToStringRecursive()
 {
-  return constexpr_string<1>("}");
+  return "}"_cs;
 }
 template <typename T0, typename... Ts>
 VIR_AUTO_OR_STRING typelistToStringRecursive(T0 *, Ts *...)
 {
-  return constexpr_string<2>(", ") + typeToStringRecurse<T0>() +
+  return ", "_cs + typeToStringRecurse<T0>() +
          typelistToStringRecursive(typename std::add_pointer<Ts>::type()...);
 }
 
 template <typename T0, typename... Ts>
 VIR_AUTO_OR_STRING typeToString_impl(Typelist<T0, Ts...> *)
 {
-  return constexpr_string<1>("{") + typeToStringRecurse<T0>() +
+  return "{"_cs + typeToStringRecurse<T0>() +
          typelistToStringRecursive(typename std::add_pointer<Ts>::type()...);
 }
 
@@ -275,13 +282,13 @@ VIR_CONSTEXPR_STRING_RET(3) typeToString_impl(Vc::simd_abi::knc *) { return "knc
 VIR_CONSTEXPR_STRING_RET(4) typeToString_impl(Vc::simd_abi::neon *) { return "neon"; }
 template <class T, class A> VIR_AUTO_OR_STRING typeToString_impl(Vc::simd<T, A> *)
 {
-  return constexpr_string<5>("simd<") + typeToStringRecurse<T>() + constexpr_string<2>(", ") +
-         typeToStringRecurse<A>() + constexpr_string<1>('>');
+  return "simd<"_cs + typeToStringRecurse<T>() + ", "_cs + typeToStringRecurse<A>() +
+         '>'_cs;
 }
 template <class T, class A> VIR_AUTO_OR_STRING typeToString_impl(Vc::mask<T, A> *)
 {
-  return constexpr_string<5>("mask<") + typeToStringRecurse<T>() + constexpr_string<2>(", ") +
-         typeToStringRecurse<A>() + constexpr_string<1>('>');
+  return "mask<"_cs + typeToStringRecurse<T>() + ", "_cs + typeToStringRecurse<A>() +
+         '>'_cs;
 }
 
 // generic fallback (typeid::name) {{{1
