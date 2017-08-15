@@ -33,7 +33,7 @@ namespace Vc
 inline namespace v2
 {
 
-namespace datapar_abi
+namespace simd_abi
 {
 template <int N> struct fixed_size;
 struct scalar;
@@ -42,11 +42,11 @@ struct avx;
 struct avx512;
 struct knc;
 struct neon;
-}  // namespace datapar_abi
+}  // namespace simd_abi
 
-template <class T> struct is_datapar;
+template <class T> struct is_simd;
 template <class T> struct is_mask;
-template <class T, class Abi> class datapar;
+template <class T, class Abi> class simd;
 template <class T, class Abi> class mask;
 
 }  // inline namespace v2

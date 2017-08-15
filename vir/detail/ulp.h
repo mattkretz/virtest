@@ -80,10 +80,10 @@ inline T ulpDiffToReference(FloatingPoint<T> val, FloatingPoint<T> ref)
 }
 
 template <typename T, typename A>
-inline Vc::datapar<T, A> ulpDiffToReference(const Vc::datapar<T, A> &val_,
-                                            const Vc::datapar<T, A> &ref_)
+inline Vc::simd<T, A> ulpDiffToReference(const Vc::simd<T, A> &val_,
+                                         const Vc::simd<T, A> &ref_)
 {
-  using V = Vc::datapar<T, A>;
+  using V = Vc::simd<T, A>;
   using M = typename V::mask_type;
 
   V val = val_;
@@ -100,7 +100,7 @@ inline Vc::datapar<T, A> ulpDiffToReference(const Vc::datapar<T, A> &val_,
   where(zeroMask, val) = std::numeric_limits<V>::min();
   where(zeroMask, diff) += 1;
 
-  Vc::datapar<int, Vc::datapar_abi::fixed_size<V::size()>> exp;
+  Vc::simd<int, Vc::simd_abi::fixed_size<V::size()>> exp;
   frexp(ref, &exp);
   diff += ldexp(abs(ref - val), std::numeric_limits<T>::digits - exp);
   where(val_ == ref_ || (isnan(val_) && isnan(ref_)), diff) = V();
@@ -108,15 +108,15 @@ inline Vc::datapar<T, A> ulpDiffToReference(const Vc::datapar<T, A> &val_,
 }
 
 template <typename T, typename A>
-inline typename std::enable_if<std::is_floating_point<T>::value, Vc::datapar<T, A>>::type
-ulpDiffToReferenceSigned(const Vc::datapar<T, A> &_val, const Vc::datapar<T, A> &_ref)
+inline typename std::enable_if<std::is_floating_point<T>::value, Vc::simd<T, A>>::type
+ulpDiffToReferenceSigned(const Vc::simd<T, A> &_val, const Vc::simd<T, A> &_ref)
 {
   return copysign(ulpDiffToReference(_val, _ref), _val - _ref);
 }
 
 template <typename T, typename A>
-inline typename std::enable_if<!std::is_floating_point<T>::value, Vc::datapar<T, A>>::type
-ulpDiffToReferenceSigned(const Vc::datapar<T, A> &, const Vc::datapar<T, A> &)
+inline typename std::enable_if<!std::is_floating_point<T>::value, Vc::simd<T, A>>::type
+ulpDiffToReferenceSigned(const Vc::simd<T, A> &, const Vc::simd<T, A> &)
 {
   return 0;
 }

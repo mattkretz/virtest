@@ -262,20 +262,20 @@ VIR_AUTO_OR_STRING typeToString_impl(Typelist<T0, Ts...> *)
 
 VIR_CONSTEXPR_STRING_RET(2) typeToString_impl(Typelist<> *) { return "{}"; }
 
-// Vc::datapar to string {{{1
-template <int N> VIR_AUTO_OR_STRING typeToString_impl(Vc::datapar_abi::fixed_size<N> *)
+// Vc::simd to string {{{1
+template <int N> VIR_AUTO_OR_STRING typeToString_impl(Vc::simd_abi::fixed_size<N> *)
 {
   return number_to_string(std::integral_constant<int, N>());
 }
-VIR_CONSTEXPR_STRING_RET(6) typeToString_impl(Vc::datapar_abi::scalar *) { return "scalar"; }
-VIR_CONSTEXPR_STRING_RET(3) typeToString_impl(Vc::datapar_abi::sse *) { return "sse"; }
-VIR_CONSTEXPR_STRING_RET(3) typeToString_impl(Vc::datapar_abi::avx *) { return "avx"; }
-VIR_CONSTEXPR_STRING_RET(6) typeToString_impl(Vc::datapar_abi::avx512 *) { return "avx512"; }
-VIR_CONSTEXPR_STRING_RET(3) typeToString_impl(Vc::datapar_abi::knc *) { return "knc"; }
-VIR_CONSTEXPR_STRING_RET(4) typeToString_impl(Vc::datapar_abi::neon *) { return "neon"; }
-template <class T, class A> VIR_AUTO_OR_STRING typeToString_impl(Vc::datapar<T, A> *)
+VIR_CONSTEXPR_STRING_RET(6) typeToString_impl(Vc::simd_abi::scalar *) { return "scalar"; }
+VIR_CONSTEXPR_STRING_RET(3) typeToString_impl(Vc::simd_abi::sse *) { return "sse"; }
+VIR_CONSTEXPR_STRING_RET(3) typeToString_impl(Vc::simd_abi::avx *) { return "avx"; }
+VIR_CONSTEXPR_STRING_RET(6) typeToString_impl(Vc::simd_abi::avx512 *) { return "avx512"; }
+VIR_CONSTEXPR_STRING_RET(3) typeToString_impl(Vc::simd_abi::knc *) { return "knc"; }
+VIR_CONSTEXPR_STRING_RET(4) typeToString_impl(Vc::simd_abi::neon *) { return "neon"; }
+template <class T, class A> VIR_AUTO_OR_STRING typeToString_impl(Vc::simd<T, A> *)
 {
-  return constexpr_string<8>("datapar<") + typeToStringRecurse<T>() + constexpr_string<2>(", ") +
+  return constexpr_string<5>("simd<") + typeToStringRecurse<T>() + constexpr_string<2>(", ") +
          typeToStringRecurse<A>() + constexpr_string<1>('>');
 }
 template <class T, class A> VIR_AUTO_OR_STRING typeToString_impl(Vc::mask<T, A> *)

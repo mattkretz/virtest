@@ -1024,7 +1024,7 @@ template <typename T> inline void Compare::writePlotData(std::fstream &file, T a
 {
   const T ref = b;
   const T dist = ulpDiffToReferenceSigned(a, b);
-  writePlotDataImpl(Vc::is_datapar<T>(), file, ref, dist);
+  writePlotDataImpl(Vc::is_simd<T>(), file, ref, dist);
 }
 
 // assert_impl (called from assert macro) {{{1
