@@ -144,11 +144,11 @@ public:
 };
 
 template <std::size_t N> using CStr = const char[N];
-template <std::size_t N> constexpr constexpr_string<N> cs(const CStr<N> &str)
+template <std::size_t N> VIR_CONSTEXPR_STRING_RET(N) cs(const CStr<N> &str)
 {
   return str;
 }
-constexpr constexpr_string<1> cs(const char c) { return c; }
+VIR_CONSTEXPR_STRING_RET(1) cs(const char c) { return constexpr_string<1>(c); }
 
 VIR_CONSTEXPR_STRING_RET(1) number_to_string(std::integral_constant<int, 0>) { return "0"; }
 VIR_CONSTEXPR_STRING_RET(1) number_to_string(std::integral_constant<int, 1>) { return "1"; }
