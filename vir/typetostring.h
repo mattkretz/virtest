@@ -144,7 +144,7 @@ public:
 };
 
 template <std::size_t N> using CStr = const char[N];
-template <std::size_t N> VIR_CONSTEXPR_STRING_RET(N) cs(const CStr<N> &str)
+template <std::size_t N> VIR_CONSTEXPR_STRING_RET(N - 1) cs(const CStr<N> &str)
 {
   return str;
 }
