@@ -54,6 +54,10 @@ template <class... Ts> constexpr bool operator_is_substitution_failure()
 }
 
 // sfinae_is_callable{{{1
+#ifdef Vc_CLANG
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wundefined-inline"
+#endif
 template <class... Args, class F>
 constexpr auto sfinae_is_callable_impl(int, F &&f) -> typename std::conditional<
     true, std::true_type, decltype(std::forward<F>(f)(std::declval<Args>()...))>::type;
@@ -65,6 +69,10 @@ template <class... Args, class F> constexpr bool sfinae_is_callable(F &&)
 template <class... Args, class F>
 constexpr auto sfinae_is_callable_t(F &&f)
     -> decltype(sfinae_is_callable_impl<Args...>(int(), std::declval<F>()));
+
+#ifdef Vc_CLANG
+#pragma clang diagnostic pop
+#endif
 
 // traits {{{1
 template <class A, class B> constexpr bool has_less_bits()
