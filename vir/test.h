@@ -457,14 +457,16 @@ VIR_ALWAYS_INLINE bool unittest_compareHelper<std::type_info, std::type_info>(
 namespace detail
 {
 using std::abs;
-template <typename T, typename U = decltype(abs(std::declval<const T &>()))>
+template <typename T, typename U = decltype(double(abs(std::declval<const T &>())))>
 T ulpDiffToReferenceWrapper(T a, T b, int)
 {
+  using vir::detail::ulpDiffToReference;
   const T diff = ulpDiffToReference(a, b);
   if (VIR_IS_UNLIKELY(global_unit_test_object_.findMaximumDistance)) {
     using std::abs;
+    using std::max;
     global_unit_test_object_.maximumDistance =
-        std::max<double>(abs(diff), global_unit_test_object_.maximumDistance);
+        max(double(abs(diff)), global_unit_test_object_.maximumDistance);
     global_unit_test_object_.meanDistance += abs(diff);
     ++global_unit_test_object_.meanCount;
   }
@@ -473,11 +475,10 @@ T ulpDiffToReferenceWrapper(T a, T b, int)
 
 template <typename T> T ulpDiffToReferenceWrapper(const T a, const T b, float)
 {
-  T diff;
-  for (size_t i = 0; i < a.size(); ++i) {
-    diff[i] = ulpDiffToReference(a[i], b[i]);
-  }
-  return diff;
+  return T([&](auto i) {
+    using vir::detail::ulpDiffToReference;
+    return ulpDiffToReference(a[i], b[i]);
+  });
 }
 }  // namespace detail
 
@@ -720,6 +721,7 @@ public:
       print(", allowed difference: ±");
       print(error);
       print("\ndistance: ");
+      using vir::detail::ulpDiffToReferenceSigned;
       print(ulpDiffToReferenceSigned(a, b));
       print(" ulp");
     }
@@ -765,6 +767,7 @@ public:
       print(", allowed: ±");
       print(error * (b > 0 ? b : -b));
       print("\ndistance: ");
+      using vir::detail::ulpDiffToReferenceSigned;
       print(ulpDiffToReferenceSigned(a, b));
       print(" ulp");
     }
@@ -961,6 +964,7 @@ private:
   static inline void printFuzzyInfoImpl(std::true_type, T a, T b, double fuzzyness)
   {
     print("\ndistance: ");
+    using vir::detail::ulpDiffToReferenceSigned;
     print(ulpDiffToReferenceSigned(a, b));
     print(" ulp, allowed distance: ±");
     print(fuzzyness);
@@ -1011,7 +1015,7 @@ template <typename T> inline void Compare::printFuzzyInfo(T a, T b)
 template <typename T>
 static inline void writePlotDataImpl(std::true_type, std::fstream &file, T ref, T dist)
 {
-  for (size_t i = 0; i < T::Size; ++i) {
+  for (size_t i = 0; i < T::size(); ++i) {
     file << std::setprecision(12) << ref[i] << "\t" << dist[i] << "\n";
   }
 }
@@ -1023,6 +1027,7 @@ static inline void writePlotDataImpl(std::false_type, std::fstream &file, T ref,
 template <typename T> inline void Compare::writePlotData(std::fstream &file, T a, T b)
 {
   const T ref = b;
+  using vir::detail::ulpDiffToReferenceSigned;
   const T dist = ulpDiffToReferenceSigned(a, b);
   writePlotDataImpl(Vc::is_simd<T>(), file, ref, dist);
 }
