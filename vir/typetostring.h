@@ -77,7 +77,7 @@ template <int N> class constexpr_string
   }
 
 public:
-  constexpr constexpr_string(const char c) : chars{c, '\0'} {}
+  constexpr constexpr_string(const char c) : chars{{c, '\0'}} {}
   constexpr constexpr_string(const std::initializer_list<char> &c)
       : constexpr_string(&*c.begin(), index_seq)
   {
@@ -85,7 +85,7 @@ public:
   constexpr constexpr_string(const char str[N]) : constexpr_string(str, index_seq) {}
   template <std::size_t... Is>
   constexpr constexpr_string(const char str[N], std::index_sequence<Is...>)
-      : chars{str[Is]..., '\0'}
+      : chars{{str[Is]..., '\0'}}
   {
   }
 
