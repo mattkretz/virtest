@@ -473,12 +473,19 @@ T ulpDiffToReferenceWrapper(T a, T b, int)
   return diff;
 }
 
-template <typename T> T ulpDiffToReferenceWrapper(const T a, const T b, float)
-{
-  return T([&](auto i) {
+template <class T> struct UlpDiffToReferenceWrapperLambda {
+  const T &a;
+  const T &b;
+  template <class U> T operator()(U i)
+  {
     using vir::detail::ulpDiffToReference;
     return ulpDiffToReference(a[i], b[i]);
-  });
+  }
+};
+template <typename T> T ulpDiffToReferenceWrapper(const T a, const T b, float)
+{
+  UlpDiffToReferenceWrapperLambda<T> lambda = {a, b};
+  return T(lambda);
 }
 }  // namespace detail
 
