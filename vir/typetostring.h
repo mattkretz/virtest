@@ -150,80 +150,26 @@ template <std::size_t N> VIR_CONSTEXPR_STRING_RET(N - 1) cs(const CStr<N> &str)
 }
 VIR_CONSTEXPR_STRING_RET(1) cs(const char c) { return constexpr_string<1>(c); }
 
-VIR_CONSTEXPR_STRING_RET(1) number_to_string(std::integral_constant<int, 0>) { return "0"; }
-VIR_CONSTEXPR_STRING_RET(1) number_to_string(std::integral_constant<int, 1>) { return "1"; }
-VIR_CONSTEXPR_STRING_RET(1) number_to_string(std::integral_constant<int, 2>) { return "2"; }
-VIR_CONSTEXPR_STRING_RET(1) number_to_string(std::integral_constant<int, 3>) { return "3"; }
-VIR_CONSTEXPR_STRING_RET(1) number_to_string(std::integral_constant<int, 4>) { return "4"; }
-VIR_CONSTEXPR_STRING_RET(1) number_to_string(std::integral_constant<int, 5>) { return "5"; }
-VIR_CONSTEXPR_STRING_RET(1) number_to_string(std::integral_constant<int, 6>) { return "6"; }
-VIR_CONSTEXPR_STRING_RET(1) number_to_string(std::integral_constant<int, 7>) { return "7"; }
-VIR_CONSTEXPR_STRING_RET(1) number_to_string(std::integral_constant<int, 8>) { return "8"; }
-VIR_CONSTEXPR_STRING_RET(1) number_to_string(std::integral_constant<int, 9>) { return "9"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 10>) { return "10"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 11>) { return "11"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 12>) { return "12"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 13>) { return "13"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 14>) { return "14"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 15>) { return "15"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 16>) { return "16"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 17>) { return "17"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 18>) { return "18"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 19>) { return "19"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 20>) { return "20"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 21>) { return "21"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 22>) { return "22"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 23>) { return "23"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 24>) { return "24"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 25>) { return "25"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 26>) { return "26"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 27>) { return "27"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 28>) { return "28"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 29>) { return "29"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 30>) { return "30"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 31>) { return "31"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 32>) { return "32"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 33>) { return "33"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 34>) { return "34"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 35>) { return "35"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 36>) { return "36"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 37>) { return "37"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 38>) { return "38"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 39>) { return "39"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 40>) { return "40"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 41>) { return "41"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 42>) { return "42"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 43>) { return "43"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 44>) { return "44"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 45>) { return "45"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 46>) { return "46"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 47>) { return "47"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 48>) { return "48"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 49>) { return "49"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 50>) { return "50"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 51>) { return "51"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 52>) { return "52"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 53>) { return "53"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 54>) { return "54"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 55>) { return "55"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 56>) { return "56"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 57>) { return "57"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 58>) { return "58"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 59>) { return "59"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 60>) { return "60"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 61>) { return "61"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 62>) { return "62"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 63>) { return "63"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 64>) { return "64"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 65>) { return "65"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 66>) { return "66"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 67>) { return "67"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 68>) { return "68"; }
-VIR_CONSTEXPR_STRING_RET(2) number_to_string(std::integral_constant<int, 69>) { return "69"; }
-// fallback
-template <int N> inline std::string number_to_string(std::integral_constant<int, N>)
+template <class T, T N>
+VIR_CONSTEXPR_STRING_RET(1)
+number_to_string(std::integral_constant<T, N>,
+                 typename std::enable_if<(N >= 0 && N <= 9)>::type * = nullptr)
 {
-  return std::to_string(N);
+  return cs('0' + N);
+}
+
+template <class T, T N>
+VIR_AUTO_OR_STRING number_to_string(std::integral_constant<T, N>,
+                                    typename std::enable_if<(N >= 10)>::type * = nullptr)
+{
+  return number_to_string(std::integral_constant<T, N / 10>()) + cs('0' + N % 10);
+}
+
+template <class T, T N>
+VIR_AUTO_OR_STRING number_to_string(std::integral_constant<T, N>,
+                                    typename std::enable_if<(N < 0)>::type * = nullptr)
+{
+  return cs('-') + number_to_string(std::integral_constant<T, -N>());
 }
 
 // std::array<T, N> {{{1
@@ -244,8 +190,8 @@ template <typename T> VIR_AUTO_OR_STRING typeToString_impl(std::vector<T> *)
 template <typename T, T N>
 VIR_AUTO_OR_STRING typeToString_impl(std::integral_constant<T, N> *)
 {
-  return cs("integral_constant<") + number_to_string(std::integral_constant<int, N>()) +
-         cs('>');
+  return cs("integral_constant<") + typeToStringRecurse<T>() + cs(", ") +
+         number_to_string(std::integral_constant<T, N>()) + cs('>');
 }
 
 // template parameter pack to a comma separated string {{{1

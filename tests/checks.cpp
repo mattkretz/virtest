@@ -70,7 +70,9 @@ TEST(type_to_string)  //{{{1
 {
   COMPARE((vir::typeToString<std::array<int, 3>>()), "array<   int, 3>");
   COMPARE((vir::typeToString<std::vector<float>>()), "vector< float>");
-  COMPARE((vir::typeToString<std::integral_constant<int, 3>>()), "integral_constant<3>");
+  COMPARE((vir::typeToString<std::integral_constant<int, 3>>()), "integral_constant<   int, 3>");
+  COMPARE((vir::typeToString<std::integral_constant<int, -15>>()), "integral_constant<   int, -15>");
+  COMPARE((vir::typeToString<std::integral_constant<unsigned long long, 281474976710655>>()), "integral_constant<ullong, 281474976710655>");
   COMPARE((vir::typeToString<vir::Typelist<>>()), "{}");
   COMPARE((vir::typeToString<vir::Typelist<int, float>>()), "{   int,  float}");
 }
