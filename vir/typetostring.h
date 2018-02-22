@@ -32,7 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #  if __has_include(<Vc/fwddecl.h>)
 #    include <Vc/fwddecl.h>
 #  endif
-#else
+#elif defined COMPILE_FOR_UNIT_TESTS
 #  include <Vc/fwddecl.h>
 #endif
 #include "typelist.h"

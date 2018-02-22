@@ -1019,15 +1019,15 @@ template <typename T> inline void Compare::printFuzzyInfo(T a, T b)
   printFuzzyInfoImpl(std::is_floating_point<U>(), a, b,
                      global_unit_test_object_.fuzzyness<U>());
 }
-template <typename T>
-static inline void writePlotDataImpl(std::true_type, std::fstream &file, T ref, T dist)
+template <typename T, size_t N = T::size()>
+static inline void writePlotDataImpl(std::fstream &file, T ref, T dist, int)
 {
-  for (size_t i = 0; i < T::size(); ++i) {
+  for (size_t i = 0; i < N; ++i) {
     file << std::setprecision(12) << ref[i] << "\t" << dist[i] << "\n";
   }
 }
 template <typename T>
-static inline void writePlotDataImpl(std::false_type, std::fstream &file, T ref, T dist)
+static inline void writePlotDataImpl(std::fstream &file, T ref, T dist, float)
 {
   file << std::setprecision(12) << ref << "\t" << dist << "\n";
 }
@@ -1036,7 +1036,7 @@ template <typename T> inline void Compare::writePlotData(std::fstream &file, T a
   const T ref = b;
   using vir::detail::ulpDiffToReferenceSigned;
   const T dist = ulpDiffToReferenceSigned(a, b);
-  writePlotDataImpl(Vc::is_simd<T>(), file, ref, dist);
+  writePlotDataImpl(file, ref, dist, int());
 }
 
 // assert_impl (called from assert macro) {{{1
