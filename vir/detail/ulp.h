@@ -28,7 +28,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef VIR_DETAIL_ULP_H_
 #define VIR_DETAIL_ULP_H_
 
-#include "vc_fwd.h"
+#ifdef __has_include
+#  if __has_include(<Vc/fwddecl.h>)
+#    include <Vc/fwddecl.h>
+#  endif
+#else
+#  include <Vc/fwddecl.h>
+#endif
 #include <cmath>
 #include <limits>
 

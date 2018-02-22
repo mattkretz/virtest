@@ -28,8 +28,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef VIR_TYPETOSTRING_H_
 #define VIR_TYPETOSTRING_H_
 
+#ifdef __has_include
+#  if __has_include(<Vc/fwddecl.h>)
+#    include <Vc/fwddecl.h>
+#  endif
+#else
+#  include <Vc/fwddecl.h>
+#endif
 #include "typelist.h"
-#include "detail/vc_fwd.h"
 #include <array>
 #include <sstream>
 #include <string>
@@ -216,16 +222,16 @@ VIR_AUTO_OR_STRING typeToString_impl(Typelist<T0, Ts...> *)
 VIR_CONSTEXPR_STRING_RET(2) typeToString_impl(Typelist<> *) { return "{}"; }
 
 // Vc::simd to string {{{1
+#ifdef VC_FWDDECL_H_
 template <int N> VIR_AUTO_OR_STRING typeToString_impl(Vc::simd_abi::fixed_size<N> *)
 {
   return number_to_string(std::integral_constant<int, N>());
 }
 VIR_CONSTEXPR_STRING_RET(6) typeToString_impl(Vc::simd_abi::scalar *) { return "scalar"; }
-VIR_CONSTEXPR_STRING_RET(3) typeToString_impl(Vc::simd_abi::sse *) { return "sse"; }
-VIR_CONSTEXPR_STRING_RET(3) typeToString_impl(Vc::simd_abi::avx *) { return "avx"; }
-VIR_CONSTEXPR_STRING_RET(6) typeToString_impl(Vc::simd_abi::avx512 *) { return "avx512"; }
-VIR_CONSTEXPR_STRING_RET(3) typeToString_impl(Vc::simd_abi::knc *) { return "knc"; }
-VIR_CONSTEXPR_STRING_RET(4) typeToString_impl(Vc::simd_abi::neon *) { return "neon"; }
+VIR_CONSTEXPR_STRING_RET(3) typeToString_impl(Vc::simd_abi::Sse *) { return "Sse"; }
+VIR_CONSTEXPR_STRING_RET(3) typeToString_impl(Vc::simd_abi::Avx *) { return "Avx"; }
+VIR_CONSTEXPR_STRING_RET(6) typeToString_impl(Vc::simd_abi::Avx512 *) { return "Avx512"; }
+VIR_CONSTEXPR_STRING_RET(4) typeToString_impl(Vc::simd_abi::Neon *) { return "Neon"; }
 template <class T, class A> VIR_AUTO_OR_STRING typeToString_impl(Vc::simd<T, A> *)
 {
   return cs("simd<") + typeToStringRecurse<T>() + cs(", ") + typeToStringRecurse<A>() +
@@ -236,6 +242,7 @@ template <class T, class A> VIR_AUTO_OR_STRING typeToString_impl(Vc::simd_mask<T
   return cs("simd_mask<") + typeToStringRecurse<T>() + cs(", ") + typeToStringRecurse<A>() +
          cs('>');
 }
+#endif  // VC_FWDDECL_H_
 
 // generic fallback (typeid::name) {{{1
 template <typename T> inline std::string typeToString_impl(T *)
