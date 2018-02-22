@@ -476,7 +476,7 @@ T ulpDiffToReferenceWrapper(T a, T b, int)
 template <class T> struct UlpDiffToReferenceWrapperLambda {
   const T &a;
   const T &b;
-  template <class U> T operator()(U i)
+  template <class U> auto operator()(U i) -> typename std::decay<decltype(a[i])>::type
   {
     using vir::detail::ulpDiffToReference;
     return ulpDiffToReference(a[i], b[i]);
