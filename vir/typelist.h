@@ -405,6 +405,27 @@ template <class... Ts> struct filter_list<Typelist<>, Typelist<Ts...>> {
   using type = Typelist<Ts...>;
 };
 
+// choose one randomly {{{1
+class compile_time_rand {
+    static constexpr const char *const time = __TIME__;
+    static constexpr unsigned seed = (time[0] - '0') * 36000 + (time[1] - '0') * 3600 +
+                                     (time[3] - '0') * 600 + (time[4] - '0') * 60 +
+                                     (time[6] - '0') * 10 + (time[7] - '0');
+    template <int N> using _ = std::integral_constant<int, N>;
+    static constexpr unsigned advance(_<0>) { return seed; }
+    template <int N> static constexpr unsigned advance(_<N>) {
+        return (advance(_<N - 1>()) * 48271u) % 2147483647u;
+    }
+
+public:
+    template <int N> static constexpr unsigned get() { return advance(_<N + 1>()) / 2; }
+    template <class List, int N = List::size()>
+    using choose_one = typename List::template at<get<N>() % List::size()>;
+};
+
+#define VIR_CHOOSE_ONE_RANDOMLY(...)                                                     \
+  vir::Typelist<vir::compile_time_rand::choose_one<__VA_ARGS__, __COUNTER__>>
+
 // static_asserts {{{1
 #ifndef NDEBUG
 static_assert(
