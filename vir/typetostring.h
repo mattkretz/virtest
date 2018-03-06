@@ -272,7 +272,10 @@ VIR_CONSTEXPR_STRING_RET(6) typeToString_impl(unsigned short *) { return "ushort
 VIR_CONSTEXPR_STRING_RET(6) typeToString_impl(char *) { return "  char"; }
 VIR_CONSTEXPR_STRING_RET(6) typeToString_impl(unsigned char *) { return " uchar"; }
 VIR_CONSTEXPR_STRING_RET(6) typeToString_impl(signed char *) { return " schar"; }
-VIR_CONSTEXPR_STRING_RET(6) typeToString_impl(bool *) { return "  bool"; }
+VIR_CONSTEXPR_STRING_RET(6) typeToString_impl(bool *)     { return "  bool"; }
+VIR_CONSTEXPR_STRING_RET(6) typeToString_impl(wchar_t *)  { return " wchar"; }
+VIR_CONSTEXPR_STRING_RET(6) typeToString_impl(char16_t *) { return "char16"; }
+VIR_CONSTEXPR_STRING_RET(6) typeToString_impl(char32_t *) { return "char32"; }
 
 template <typename T> VIR_AUTO_OR_STRING typeToStringRecurse()
 {
