@@ -407,24 +407,58 @@ template <class... Ts> struct filter_list<Typelist<>, Typelist<Ts...>> {
 
 // choose one randomly {{{1
 class compile_time_rand {
-    static constexpr const char *const time = __TIME__;
-    static constexpr unsigned seed = (time[0] - '0') * 36000 + (time[1] - '0') * 3600 +
-                                     (time[3] - '0') * 600 + (time[4] - '0') * 60 +
-                                     (time[6] - '0') * 10 + (time[7] - '0');
-    template <int N> using _ = std::integral_constant<int, N>;
-    static constexpr unsigned advance(_<0>) { return seed; }
-    template <int N> static constexpr unsigned advance(_<N>) {
-        return (advance(_<N - 1>()) * 48271u) % 2147483647u;
-    }
+  static constexpr const char *const time = __TIME__;
+  static constexpr unsigned seed = (time[0] - '0') * 36000 + (time[1] - '0') * 3600 +
+                                   (time[3] - '0') * 600 + (time[4] - '0') * 60 +
+                                   (time[6] - '0') * 10 + (time[7] - '0');
+
+  template <int N> using _ = std::integral_constant<int, N>;
+
+  static constexpr unsigned advance(_<0>, unsigned s) { return s; }
+
+  template <int N> static constexpr unsigned advance(_<N>, unsigned s)
+  {
+    return (advance(_<N - 1>(), s) * 48271u) % 2147483647u;
+  }
 
 public:
-    template <int N> static constexpr unsigned get() { return advance(_<N + 1>()) / 2; }
-    template <class List, int N = List::size()>
-    using choose_one = typename List::template at<get<N>() % List::size()>;
+  template <int N> static constexpr unsigned get(int add_to_seed)
+  {
+    return advance(_<N + 1>(), seed + add_to_seed) / 2;
+  }
+
+  template <class List, int N = List::size(), unsigned K1 = __builtin_LINE(),
+            unsigned K2 = 48271u
+#ifdef __AVX__
+                          ^ 1
+#endif
+#ifdef __AVX2__
+                          ^ 2
+#endif
+#ifdef __AVX512F__
+                          ^ 4
+#endif
+#ifdef __AVX512VL__
+                          ^ 8
+#endif
+#ifdef __SSE4_2__
+                          ^ 16
+#endif
+#ifdef __SSSE3__
+                          ^ 32
+#endif
+#ifdef __SSE3__
+                          ^ 64
+#endif
+#ifdef __XOP__
+                          ^ 128
+#endif
+            >
+  using choose_one = typename List::template at<get<N>(K1 *K2) % List::size()>;
 };
 
 #define VIR_CHOOSE_ONE_RANDOMLY(...)                                                     \
-  vir::Typelist<vir::compile_time_rand::choose_one<__VA_ARGS__, __COUNTER__>>
+  vir::Typelist<vir::compile_time_rand::choose_one<__VA_ARGS__, __COUNTER__, __LINE__>>
 
 // static_asserts {{{1
 #ifndef NDEBUG
