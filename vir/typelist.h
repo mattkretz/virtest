@@ -405,6 +405,26 @@ template <class... Ts> struct filter_list<Typelist<>, Typelist<Ts...>> {
   using type = Typelist<Ts...>;
 };
 
+// remove_duplicates {{{1
+template <class T> struct remove_duplicates;
+template <> struct remove_duplicates<Typelist<>> {
+  using type = Typelist<>;
+};
+template <class T> struct remove_duplicates<Typelist<T>> {
+  using type = Typelist<T>;
+};
+template <class T> struct remove_duplicates<Typelist<T, T>> {
+  using type = Typelist<T>;
+};
+template <class T, class... Ts> struct remove_duplicates<Typelist<T, Ts...>> {
+  using type =
+      concat<T, typename remove_duplicates<
+                    concat<typename detail::apply_filter<T, Ts>::type...>>::type>;
+};
+template <class T> using remove_duplicates_t = typename remove_duplicates<T>::type;
+template <class... Ts>
+using make_unique_typelist = typename remove_duplicates<Typelist<Ts...>>::type;
+
 // choose one randomly {{{1
 class compile_time_rand {
   static constexpr const char *const time = __TIME__;
