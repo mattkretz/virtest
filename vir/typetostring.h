@@ -228,10 +228,10 @@ template <int N> VIR_AUTO_OR_STRING typeToString_impl(Vc::simd_abi::fixed_size<N
   return number_to_string(std::integral_constant<int, N>());
 }
 VIR_CONSTEXPR_STRING_RET(6) typeToString_impl(Vc::simd_abi::scalar *) { return "scalar"; }
-VIR_CONSTEXPR_STRING_RET(3) typeToString_impl(Vc::simd_abi::Sse *) { return "Sse"; }
-VIR_CONSTEXPR_STRING_RET(3) typeToString_impl(Vc::simd_abi::Avx *) { return "Avx"; }
-VIR_CONSTEXPR_STRING_RET(6) typeToString_impl(Vc::simd_abi::Avx512 *) { return "Avx512"; }
-VIR_CONSTEXPR_STRING_RET(4) typeToString_impl(Vc::simd_abi::Neon *) { return "Neon"; }
+VIR_CONSTEXPR_STRING_RET(3) typeToString_impl(Vc::simd_abi::__sse *) { return "SSE"; }
+VIR_CONSTEXPR_STRING_RET(3) typeToString_impl(Vc::simd_abi::__avx *) { return "AVX"; }
+VIR_CONSTEXPR_STRING_RET(6) typeToString_impl(Vc::simd_abi::__avx512 *) { return "AVX512"; }
+VIR_CONSTEXPR_STRING_RET(4) typeToString_impl(Vc::simd_abi::__neon *) { return "NEON"; }
 template <class T, class A> VIR_AUTO_OR_STRING typeToString_impl(Vc::simd<T, A> *)
 {
   return cs("simd<") + typeToStringRecurse<T>() + cs(", ") + typeToStringRecurse<A>() +
