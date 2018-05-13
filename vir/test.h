@@ -291,8 +291,6 @@ public:
       : status(true)
       , expect_failure(false)
       , expect_assert_failure(false)
-      , float_fuzzyness(1.f)
-      , double_fuzzyness(1.)
       , only_name(0)
       , m_finalized(false)
       , failedTests(0)
@@ -322,13 +320,16 @@ public:
   bool status;
   bool expect_failure;
   bool expect_assert_failure;
-  float float_fuzzyness;
-  double double_fuzzyness;
   const char *only_name;
   bool vim_lines = false;
   std::fstream plotFile;
 
-  template <class T> T &fuzzyness();
+  template <class T> T &fuzzyness()
+  {
+    static_assert(std::is_floating_point<T>::value, "");
+    static T value = 1;
+    return value;
+  }
 
 private:
   bool m_finalized;
@@ -342,8 +343,6 @@ public:
   double meanDistance;
   int meanCount;
 };
-template <> float &UnitTester::fuzzyness<float>() { return float_fuzzyness; }
-template <> double &UnitTester::fuzzyness<double>() { return double_fuzzyness; }
 
 static UnitTester global_unit_test_object_;
 
@@ -669,12 +668,26 @@ public:
 
   // Fuzzy Compare ctor {{{2
   template <typename T>
-  VIR_ALWAYS_INLINE Compare(const T &a, const T &b, const char *_a, const char *_b,
-                           const char *_file, int _line, Fuzzy)
+  VIR_ALWAYS_INLINE Compare(
+      const T &a, const T &b, const char *_a, const char *_b, const char *_file,
+      int _line,
+      typename std::enable_if<!std::is_floating_point<value_type_or_T<T>>::value,
+                              Fuzzy>::type)
+      : Compare(a, b, _a, _b, _file, _line)
+  {
+  }
+
+  template <typename T>
+  VIR_ALWAYS_INLINE Compare(
+      const T &a, const T &b, const char *_a, const char *_b, const char *_file,
+      int _line,
+      typename std::enable_if<std::is_floating_point<value_type_or_T<T>>::value,
+                              Fuzzy>::type)
       : m_ip(getIp())
       , m_failed(!unittest_fuzzyCompareHelper(
             a, b, std::is_floating_point<value_type_or_T<T>>()))
   {
+    static_assert(std::is_floating_point<value_type_or_T<T>>::value, "");
     if (VIR_IS_UNLIKELY(m_failed)) {
       printFirst();
       printPosition(_file, _line);
