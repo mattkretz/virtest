@@ -230,6 +230,22 @@ template <int N> VIR_AUTO_OR_STRING typeToString_impl(Vc::simd_abi::fixed_size<N
   return number_to_string(std::integral_constant<int, N>());
 }
 VIR_CONSTEXPR_STRING_RET(6) typeToString_impl(Vc::simd_abi::scalar *) { return "scalar"; }
+template <int Bytes> VIR_AUTO_OR_STRING typeToString_impl(Vc::simd_abi::__sse_abi<Bytes> *)
+{
+  return cs("SSE:") + number_to_string(std::integral_constant<int, Bytes>());
+}
+template <int Bytes> VIR_AUTO_OR_STRING typeToString_impl(Vc::simd_abi::__avx_abi<Bytes> *)
+{
+  return cs("AVX:") + number_to_string(std::integral_constant<int, Bytes>());
+}
+template <int Bytes> VIR_AUTO_OR_STRING typeToString_impl(Vc::simd_abi::__avx512_abi<Bytes> *)
+{
+  return cs("AVX512:") + number_to_string(std::integral_constant<int, Bytes>());
+}
+template <int Bytes> VIR_AUTO_OR_STRING typeToString_impl(Vc::simd_abi::__neon_abi<Bytes> *)
+{
+  return cs("NEON:") + number_to_string(std::integral_constant<int, Bytes>());
+}
 VIR_CONSTEXPR_STRING_RET(3) typeToString_impl(Vc::simd_abi::__sse *) { return "SSE"; }
 VIR_CONSTEXPR_STRING_RET(3) typeToString_impl(Vc::simd_abi::__avx *) { return "AVX"; }
 VIR_CONSTEXPR_STRING_RET(6) typeToString_impl(Vc::simd_abi::__avx512 *) { return "AVX512"; }
