@@ -544,6 +544,7 @@ public:
   struct AbsoluteError {};
   struct RelativeError {};
   struct Mem {};
+  struct Sentinel {};
 
   // Normal Compare ctor {{{2
 #if (defined __x86_64__ || defined __amd64__ || defined __i686__ || defined __i386__) && \
@@ -667,22 +668,39 @@ public:
   }
 
   // Fuzzy Compare ctor {{{2
-  template <typename T>
+  // forward non-floating-point calls to the standard Compare
+  template <class T, class... Ts>
   VIR_ALWAYS_INLINE Compare(
       const T &a, const T &b, const char *_a, const char *_b, const char *_file,
       int _line,
       typename std::enable_if<!std::is_floating_point<value_type_or_T<T>>::value,
-                              Fuzzy>::type)
+                              Fuzzy>::type,
+      Ts &&...)
       : Compare(a, b, _a, _b, _file, _line)
   {
   }
 
-  template <typename T>
+  /**\internal
+   * Compare \p a and \p b and allow a difference of a given ULP.
+   *
+   * \param a Value to check
+   * \param b Reference value
+   * \param _a The code that produces the value \p a
+   * \param _b The code that produces the value \p b
+   * \param _file The filename (to locate an error when the test fails)
+   * \param _line The line number (to locate an error when the test fails)
+   * \param extra_data Extra values to store in a datafile (when the test is started with
+   *                   `--plotdist <filename>`.
+   *
+   * \see setFuzzyness
+   */
+  template <class T, class... Ts>
   VIR_ALWAYS_INLINE Compare(
       const T &a, const T &b, const char *_a, const char *_b, const char *_file,
       int _line,
       typename std::enable_if<std::is_floating_point<value_type_or_T<T>>::value,
-                              Fuzzy>::type)
+                              Fuzzy>::type,
+      Ts &&... extra_data)
       : m_ip(getIp())
       , m_failed(!unittest_fuzzyCompareHelper(
             a, b, std::is_floating_point<value_type_or_T<T>>()))
@@ -706,7 +724,8 @@ public:
       printFuzzyInfo(a, b);
     }
     if (global_unit_test_object_.plotFile.is_open()) {
-      writePlotData(global_unit_test_object_.plotFile, a, b);
+      writePlotData(global_unit_test_object_.plotFile, a, b,
+                    std::forward<Ts>(extra_data)...);
     }
   }
 
@@ -978,7 +997,10 @@ private:
       print("):\n");
     }
   }
-  template <typename T> static inline void writePlotData(std::fstream &file, T a, T b);
+
+  template <class T, class... Ts>
+  static inline void writePlotData(std::fstream &file, T a, T b, Ts &&...);
+
   template <typename T> static inline void printFuzzyInfo(T, T);
   template <typename T>
   static inline void printFuzzyInfoImpl(std::true_type, T a, T b, double fuzzyness)
@@ -1032,24 +1054,41 @@ template <typename T> inline void Compare::printFuzzyInfo(T a, T b)
   printFuzzyInfoImpl(std::is_floating_point<U>(), a, b,
                      global_unit_test_object_.fuzzyness<U>());
 }
-template <typename T, size_t N = T::size()>
-static inline void writePlotDataImpl(std::fstream &file, T ref, T dist, int)
+
+static inline void append_to_line(std::fstream &, Compare::Sentinel) {}
+template <class T, class... Ts>
+static inline void append_to_line(std::fstream &file, T &&x, Ts &&... rest)
+{
+    file << '\t' << x;
+    append_to_line(file, std::forward<Ts>(rest)...);
+}
+
+template <class T, class... Ts, size_t N = T::size()>
+static inline void writePlotDataImpl(std::fstream &file, T ref, T dist, int,
+                                     const Ts &... extra_data)
 {
   for (size_t i = 0; i < N; ++i) {
-    file << std::setprecision(12) << ref[i] << "\t" << dist[i] << "\n";
+    file << std::setprecision(50) << ref[i] << '\t' << dist[i];
+    append_to_line(file, extra_data[i]...);
+    file << '\n';
   }
 }
-template <typename T>
-static inline void writePlotDataImpl(std::fstream &file, T ref, T dist, float)
+template <class T, class... Ts>
+static inline void writePlotDataImpl(std::fstream &file, T ref, T dist, float,
+                                     Ts &&... extra_data)
 {
-  file << std::setprecision(12) << ref << "\t" << dist << "\n";
+  file << std::setprecision(50) << ref << '\t' << dist;
+  append_to_line(file, std::forward<Ts>(extra_data)...);
+  file << '\n';
 }
-template <typename T> inline void Compare::writePlotData(std::fstream &file, T a, T b)
+
+template <class T, class... Ts>
+inline void Compare::writePlotData(std::fstream &file, T a, T b, Ts &&... extra_data)
 {
   const T ref = b;
   using vir::detail::ulpDiffToReferenceSigned;
   const T dist = ulpDiffToReferenceSigned(a, b);
-  writePlotDataImpl(file, ref, dist, int());
+  writePlotDataImpl(file, ref, dist, int(), std::forward<Ts>(extra_data)...);
 }
 
 // assert_impl (called from assert macro) {{{1
@@ -1158,19 +1197,22 @@ template <typename T> detail::PrintMemDecorator<T> asBytes(const T &x) { return 
 // FUZZY_COMPARE {{{1
 // Workaround for clang: The "<< ' '" is only added to silence the warnings
 // about unused return values.
-#define FUZZY_COMPARE(a, b)                                                              \
+#define FUZZY_COMPARE_WRAPPER(a, b, ...)                                                 \
   vir::test::detail::Compare(a, b, #a, #b, __FILE__, __LINE__,                           \
-                             vir::test::detail::Compare::Fuzzy())                        \
-      << ' '
+                             vir::test::detail::Compare::Fuzzy(), __VA_ARGS__)
+#define FUZZY_COMPARE(...)                                                               \
+  FUZZY_COMPARE_WRAPPER(__VA_ARGS__, vir::test::detail::Compare::Sentinel()) << ' '
 // COMPARE_ABSOLUTE_ERROR {{{1
-#define COMPARE_ABSOLUTE_ERROR(a_, b_, error_)                                           \
+#define COMPARE_ABSOLUTE_ERROR(a_, b_, error_, ...)                                      \
   vir::test::detail::Compare(a_, b_, #a_, #b_, __FILE__, __LINE__,                       \
-                             vir::test::detail::Compare::AbsoluteError(), error_)        \
+                             vir::test::detail::Compare::AbsoluteError(), error_,        \
+                             __VA_ARGS__)                                                \
       << ' '
 // COMPARE_RELATIVE_ERROR {{{1
-#define COMPARE_RELATIVE_ERROR(a_, b_, error_)                                           \
+#define COMPARE_RELATIVE_ERROR(a_, b_, error_, ...)                                      \
   vir::test::detail::Compare(a_, b_, #a_, #b_, __FILE__, __LINE__,                       \
-                             vir::test::detail::Compare::RelativeError(), error_)        \
+                             vir::test::detail::Compare::RelativeError(), error_,        \
+                             __VA_ARGS__)                                                \
       << ' '
 // COMPARE {{{1
 #define COMPARE(a, b) vir::test::detail::Compare(a, b, #a, #b, __FILE__, __LINE__) << ' '
