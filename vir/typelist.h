@@ -447,7 +447,15 @@ public:
     return advance(_<N + 1>(), seed + add_to_seed) / 2;
   }
 
-  template <class List, int N = List::size(), unsigned K1 = __builtin_LINE(),
+  template <class List, int N = List::size(),
+            unsigned K1 =
+#if defined __GNUC__ && __GNUC__ >= 5
+                __builtin_LINE(),
+#elif defined __COUNTER__
+                __COUNTER__,
+#else
+                0,
+#endif
             unsigned K2 = 48271u
 #ifdef __AVX__
                           ^ 1
