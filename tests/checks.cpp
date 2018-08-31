@@ -52,7 +52,7 @@ TEST(skip)  //{{{1
 
 TEST(xfail)  //{{{1
 {
-  EXPECT_FAILURE();
+  vir::test::expect_failure();
   COMPARE(1, 2) << "\"output string\nwith newline\"";
 }
 

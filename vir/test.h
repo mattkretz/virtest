@@ -239,20 +239,72 @@ namespace vir
 namespace test
 {
 template <typename T> inline void setFuzzyness(T fuzz);
+template <typename T> inline void log_ulp_distance(T ulp);
+
+template <class Lhs, class Rhs> struct compare_traits
+{
+  using common_type = typename std::common_type<const Lhs &, const Rhs &>::type;
+  using value_type = common_type;
+  static constexpr bool use_memcompare = !vir::detail::has_equality_operator<common_type>::value;
+  static constexpr bool is_fuzzy_comparable = std::is_floating_point<common_type>::value;
+  static inline bool is_equal(const common_type &a, const common_type &b)
+  {
+    static_assert(
+        std::is_same<decltype(a == b), bool>::value,
+        "A type that doesn't compare to bool slipped into the default compare_traits. "
+        "Please specialize vir::test::compare_traits as needed.");
+    return a == b;
+  }
+
+  static inline common_type ulp_distance(const common_type &a, const common_type &b)
+  {
+    static_assert(std::is_floating_point<common_type>::value, "");
+    return vir::detail::ulpDiffToReference(a, b);
+  }
+
+  static inline common_type ulp_distance_signed(const common_type &a,
+                                                const common_type &b)
+  {
+    static_assert(std::is_floating_point<common_type>::value, "");
+    return vir::detail::ulpDiffToReferenceSigned(a, b);
+  }
+
+  static inline bool ulp_compare_and_log(const common_type &ulp,
+                                         const common_type &allowed_distance)
+  {
+    log_ulp_distance(ulp);
+    return ulp <= allowed_distance;
+  }
+
+  template <class... Ts>
+  static inline std::string to_datafile_string(const common_type &d0, const Ts &... data)
+  {
+    std::ostringstream ss;
+    ss << std::setprecision(50) << d0;
+    auto unused = {((ss << '\t' << data), 0)...};
+    (void)unused;
+    ss << '\n';
+    return ss.str();
+  }
+};
+
+template <> struct compare_traits<std::type_info, std::type_info>
+{
+  using common_type = std::type_info;
+  static constexpr bool use_memcompare = false;
+  static constexpr bool is_fuzzy_comparable = false;
+  static inline bool is_equal(const common_type &a, const common_type &b)
+  {
+    return &a == &b;
+  }
+};
+
+
 /** \internal
  * Implementation namespace
  */
 namespace detail
 {
-// using statements {{{1
-using std::vector;
-using std::get;
-
-// value_type_or_T {{{1
-template <class T> typename T::value_type value_type_or_T_impl(int);
-template <class T> T value_type_or_T_impl(float);
-template <class T> using value_type_or_T = decltype(value_type_or_T_impl<T>(int()));
-
 // printPass {{{1
 static inline void printPass()
 {
@@ -435,72 +487,21 @@ void UnitTester::runTestInt(TestFunction fun, const char *name)  //{{{1
   }
 }
 
-// all_of {{{1
-VIR_ALWAYS_INLINE bool all_of(bool x) { return x; }
-
-// unittest_compareHelper {{{1
-template <typename T1, typename T2>
-VIR_ALWAYS_INLINE bool unittest_compareHelper(const T1 &a, const T2 &b)
+// log_ulp_distance {{{1
+}  // namespace detail
+template <typename T> inline void log_ulp_distance(T ulp)
 {
-  return all_of(a == b);
+  if (VIR_IS_UNLIKELY(detail::global_unit_test_object_.findMaximumDistance)) {
+    using std::abs;
+    decltype(detail::global_unit_test_object_.maximumDistance) x = abs(ulp);
+    detail::global_unit_test_object_.maximumDistance =
+        std::max(x, detail::global_unit_test_object_.maximumDistance);
+    detail::global_unit_test_object_.meanDistance += x;
+    ++detail::global_unit_test_object_.meanCount;
+  }
 }
-
-template <>
-VIR_ALWAYS_INLINE bool unittest_compareHelper<std::type_info, std::type_info>(
-    const std::type_info &a, const std::type_info &b)
-{
-  return &a == &b;
-}
-
-// ulpDiffToReferenceWrapper {{{1
 namespace detail
 {
-using std::abs;
-template <typename T, typename U = decltype(double(abs(std::declval<const T &>())))>
-T ulpDiffToReferenceWrapper(T a, T b, int)
-{
-  using vir::detail::ulpDiffToReference;
-  const T diff = ulpDiffToReference(a, b);
-  if (VIR_IS_UNLIKELY(global_unit_test_object_.findMaximumDistance)) {
-    using std::abs;
-    using std::max;
-    global_unit_test_object_.maximumDistance =
-        max(double(abs(diff)), global_unit_test_object_.maximumDistance);
-    global_unit_test_object_.meanDistance += abs(diff);
-    ++global_unit_test_object_.meanCount;
-  }
-  return diff;
-}
-
-template <class T> struct UlpDiffToReferenceWrapperLambda {
-  const T &a;
-  const T &b;
-  template <class U> auto operator()(U i) -> typename std::decay<decltype(a[i])>::type
-  {
-    using vir::detail::ulpDiffToReference;
-    return ulpDiffToReference(a[i], b[i]);
-  }
-};
-template <typename T> T ulpDiffToReferenceWrapper(const T a, const T b, float)
-{
-  UlpDiffToReferenceWrapperLambda<T> lambda = {a, b};
-  return T(lambda);
-}
-}  // namespace detail
-
-// unittest_fuzzyCompareHelper {{{1
-template <typename T>
-static inline bool unittest_fuzzyCompareHelper(const T &a, const T &b, std::true_type)
-{
-  using U = value_type_or_T<T>;
-  return all_of(detail::ulpDiffToReferenceWrapper(a, b, int()) <=
-                global_unit_test_object_.fuzzyness<U>());
-}
-template <typename T>
-static inline bool unittest_fuzzyCompareHelper(const T &a, const T &b, std::false_type)
-{
-  return all_of(a == b);
-}
 
 class Compare  //{{{1
 {
@@ -540,47 +541,45 @@ class Compare  //{{{1
 public:
   // tag types {{{2
   struct Fuzzy {};
-  struct NoEq {};
+  //struct NoEq {};
   struct AbsoluteError {};
   struct RelativeError {};
   struct Mem {};
-  struct Sentinel {};
+  struct Sentinel {
+    Sentinel operator[](std::size_t) const { return {}; }
+  };
+
+  // require_fuzzy_compare {{{2
+  template <class Traits> static constexpr bool require_fuzzy_compare()
+  {
+#if (defined __x86_64__ || defined __amd64__ || defined __i686__ || defined __i386__) && \
+    !(defined __SSE2__ || defined __MIC__)
+    return Traits::is_fuzzy_comparable;
+#else
+    return false;
+#endif
+  }
 
   // Normal Compare ctor {{{2
-#if (defined __x86_64__ || defined __amd64__ || defined __i686__ || defined __i386__) && \
-    !defined __SSE2__
-#define VIR_NEED_FUZZY_FLOAT_COMPARE_ 1
-#else
-#define VIR_NEED_FUZZY_FLOAT_COMPARE_ 0
-#endif
-  template <typename T1, typename T2>
+  template <class T1, class T2, class Traits = compare_traits<T1, T2>>
   VIR_ALWAYS_INLINE Compare(
       const T1 &a, const T2 &b, const char *_a, const char *_b, const char *_file,
-      typename std::enable_if<vir::detail::has_equality_operator<T1, T2>::value
-#if VIR_NEED_FUZZY_FLOAT_COMPARE_
-                                  &&
-                                  !std::is_floating_point<value_type_or_T<T1>>::value &&
-                                  !std::is_floating_point<value_type_or_T<T2>>::value
-#endif
-                              ,
+      typename std::enable_if<!Traits::use_memcompare && !require_fuzzy_compare<Traits>(),
                               int>::type _line)
-      : m_ip(getIp()), m_failed(!unittest_compareHelper(a, b))
+      : m_ip(getIp()), m_failed(!Traits::is_equal(a, b))
   {
     if (VIR_IS_UNLIKELY(m_failed)) {
       printFailure(a, b, _a, _b, _file, _line);
     }
   }
 
-#if VIR_NEED_FUZZY_FLOAT_COMPARE_
-  template <typename T1, typename T2,
-            typename T = typename std::common_type<T1, T2>::type>
+  template <class T1, class T2, class Traits = compare_traits<T1, T2>>
   VIR_ALWAYS_INLINE Compare(
       const T1 &a, const T2 &b, const char *_a, const char *_b, const char *_file,
-      typename std::enable_if<vir::detail::has_equality_operator<T1, T2>::value &&
-                                  std::is_floating_point<value_type_or_T<T>>::value,
+      typename std::enable_if<!Traits::use_memcompare && require_fuzzy_compare<Traits>(),
                               int>::type _line)
       : m_ip(getIp())
-      , m_failed(!all_of(detail::ulpDiffToReferenceWrapper(T(a), T(b), int()) <= 1))
+      , m_failed(!Traits::ulp_compare_and_log(Traits::ulp_distance(a, b), 1))
   {
     if (VIR_IS_UNLIKELY(m_failed)) {
       printFirst();
@@ -598,28 +597,24 @@ public:
       print(") -> ");
       print(a == b);
       print("\ndistance: ");
-      print(detail::ulpDiffToReferenceWrapper(T(a), T(b), int()));
-      print(" ulp, allowed distance: ±");
-      print(1);
-      print(" ulp (automatic fuzzy compare to work around x87 quirks)");
+      print(Traits::ulp_distance_signed(a, b));
+      print(" ulp, allowed distance: ±1 ulp (automatic fuzzy compare to work around x87 quirks)");
     }
   }
-#endif
-#undef VIR_NEED_FUZZY_FLOAT_COMPARE_
 
-  template <typename T1, typename T2>
+  template <class T1, class T2, class Traits = compare_traits<T1, T2>>
   VIR_ALWAYS_INLINE Compare(
       const T1 &a, const T2 &b, const char *_a, const char *_b, const char *_file,
-      typename std::enable_if<!vir::detail::has_equality_operator<T1, T2>::value,
-                              int>::type _line)
+      typename std::enable_if<Traits::use_memcompare, int>::type _line)
       : Compare(a, b, _a, _b, _file, _line, Mem())
   {
   }
 
   // Mem Compare ctor {{{2
-  template <typename T1, typename T2>
+  template <class T1, class T2>
   VIR_ALWAYS_INLINE Compare(const T1 &valueA, const T2 &valueB, const char *variableNameA,
-                           const char *variableNameB, const char *filename, int line, Mem)
+                            const char *variableNameB, const char *filename, int line,
+                            Mem)
       : m_ip(getIp()), m_failed(0 != std::memcmp(&valueA, &valueB, sizeof(T1)))
   {
     static_assert(
@@ -644,11 +639,11 @@ public:
     }
   }
 
-  // NoEq Compare ctor {{{2
+  /* NoEq Compare ctor {{{2
   template <typename T1, typename T2>
   VIR_ALWAYS_INLINE Compare(const T1 &a, const T2 &b, const char *_a, const char *_b,
-                           const char *_file, int _line, NoEq)
-      : m_ip(getIp()), m_failed(!all_of(a != b))
+                            const char *_file, int _line, NoEq)
+      : m_ip(getIp()), m_failed(!(a != b))
   {
     if (VIR_IS_UNLIKELY(m_failed)) {
       printFirst();
@@ -666,15 +661,14 @@ public:
       print(')');
     }
   }
+  */
 
   // Fuzzy Compare ctor {{{2
   // forward non-floating-point calls to the standard Compare
-  template <class T, class... Ts>
+  template <class T1, class T2, class Traits = compare_traits<T1, T2>, class... Ts>
   VIR_ALWAYS_INLINE Compare(
-      const T &a, const T &b, const char *_a, const char *_b, const char *_file,
-      int _line,
-      typename std::enable_if<!std::is_floating_point<value_type_or_T<T>>::value,
-                              Fuzzy>::type,
+      const T1 &a, const T2 &b, const char *_a, const char *_b, const char *_file,
+      int _line, typename std::enable_if<!Traits::is_fuzzy_comparable, Fuzzy>::type,
       Ts &&...)
       : Compare(a, b, _a, _b, _file, _line)
   {
@@ -694,18 +688,17 @@ public:
    *
    * \see setFuzzyness
    */
-  template <class T, class... Ts>
+  template <class T1, class T2, class Traits = compare_traits<T1, T2>, class... Ts>
   VIR_ALWAYS_INLINE Compare(
-      const T &a, const T &b, const char *_a, const char *_b, const char *_file,
-      int _line,
-      typename std::enable_if<std::is_floating_point<value_type_or_T<T>>::value,
-                              Fuzzy>::type,
+      const T1 &a, const T2 &b, const char *_a, const char *_b, const char *_file,
+      int _line, typename std::enable_if<Traits::is_fuzzy_comparable, Fuzzy>::type,
       Ts &&... extra_data)
       : m_ip(getIp())
-      , m_failed(!unittest_fuzzyCompareHelper(
-            a, b, std::is_floating_point<value_type_or_T<T>>()))
+      , m_failed(!Traits::ulp_compare_and_log(
+            Traits::ulp_distance(a, b),
+            global_unit_test_object_.fuzzyness<typename Traits::value_type>()))
   {
-    static_assert(std::is_floating_point<value_type_or_T<T>>::value, "");
+    using T = typename Traits::value_type;
     if (VIR_IS_UNLIKELY(m_failed)) {
       printFirst();
       printPosition(_file, _line);
@@ -721,14 +714,65 @@ public:
       print(std::setprecision(6));
       print(") -> ");
       print(a == b);
-      printFuzzyInfo(a, b);
+      print("\ndistance: ");
+      print(Traits::ulp_distance_signed(a, b));
+      print(" ulp, allowed distance: ±");
+      print(global_unit_test_object_.fuzzyness<T>());
+      print(" ulp");
     }
     if (global_unit_test_object_.plotFile.is_open()) {
-      writePlotData(global_unit_test_object_.plotFile, a, b,
-                    std::forward<Ts>(extra_data)...);
+      global_unit_test_object_.plotFile << call_to_datafile_string<Traits>(
+          b, Traits::ulp_distance_signed(a, b), std::forward<Ts>(extra_data)...);
     }
   }
 
+private:
+  // the call_to_datafile_string hack exists to remove the Sentinel object at the end
+  // with C++14 it could be generic, when called with
+  // std::make_indexsequence<sizeof...(Ts) - 1>:
+  //
+  // template <class Traits, std::size_t... Is, class... Ts>
+  // std::string call_to_datafile_string(std::index_sequence<Is...>, Ts &&... args)
+  // {
+  //   Traits::to_datafile_string(
+  //       std::get<Is>(std::forward_as_tuple(std::forward<Ts>(args)...))...);
+  // }
+  template <class Traits>
+  std::string call_to_datafile_string(const typename Traits::common_type &a,
+                                      const typename Traits::common_type &b, Sentinel)
+  {
+    return Traits::to_datafile_string(a, b);
+  }
+  template <class Traits, class T0>
+  std::string call_to_datafile_string(const typename Traits::common_type &a,
+                                      const typename Traits::common_type &b, const T0 &c,
+                                      Sentinel)
+  {
+    return Traits::to_datafile_string(a, b, c);
+  }
+  template <class Traits, class T0, class T1>
+  std::string call_to_datafile_string(const typename Traits::common_type &a,
+                                      const typename Traits::common_type &b, const T0 &c,
+                                      const T1 &d, Sentinel)
+  {
+    return Traits::to_datafile_string(a, b, c, d);
+  }
+  template <class Traits, class T0, class T1, class T2>
+  std::string call_to_datafile_string(const typename Traits::common_type &a,
+                                      const typename Traits::common_type &b, const T0 &c,
+                                      const T1 &d, const T2 &e, Sentinel)
+  {
+    return Traits::to_datafile_string(a, b, c, d, e);
+  }
+  template <class Traits, class T0, class T1, class T2, class T3>
+  std::string call_to_datafile_string(const typename Traits::common_type &a,
+                                      const typename Traits::common_type &b, const T0 &c,
+                                      const T1 &d, const T2 &e, const T3 &f, Sentinel)
+  {
+    return Traits::to_datafile_string(a, b, c, d, e, f);
+  }
+
+public:
   // Absolute Error Compare ctor {{{2
   template <typename T, typename ET>
   VIR_ALWAYS_INLINE Compare(const T &a, const T &b, const char *_a, const char *_b,
@@ -998,24 +1042,6 @@ private:
     }
   }
 
-  template <class T, class... Ts>
-  static inline void writePlotData(std::fstream &file, T a, T b, Ts &&...);
-
-  template <typename T> static inline void printFuzzyInfo(T, T);
-  template <typename T>
-  static inline void printFuzzyInfoImpl(std::true_type, T a, T b, double fuzzyness)
-  {
-    print("\ndistance: ");
-    using vir::detail::ulpDiffToReferenceSigned;
-    print(ulpDiffToReferenceSigned(a, b));
-    print(" ulp, allowed distance: ±");
-    print(fuzzyness);
-    print(" ulp");
-  }
-  template <typename T>
-  static inline void printFuzzyInfoImpl(std::false_type, T, T, double)
-  {
-  }
   // member variables {{{2
   const size_t m_ip;
   const bool m_failed;
@@ -1046,50 +1072,6 @@ VIR_NEVER_INLINE void Compare::printFailure(const T1 &a, const T2 &b, const char
 template <typename T> struct PrintMemDecorator {
   T x;
 };
-
-// printFuzzyInfo specializations for float and double {{{1
-template <typename T> inline void Compare::printFuzzyInfo(T a, T b)
-{
-  using U = value_type_or_T<T>;
-  printFuzzyInfoImpl(std::is_floating_point<U>(), a, b,
-                     global_unit_test_object_.fuzzyness<U>());
-}
-
-static inline void append_to_line(std::fstream &, Compare::Sentinel) {}
-template <class T, class... Ts>
-static inline void append_to_line(std::fstream &file, T &&x, Ts &&... rest)
-{
-    file << '\t' << x;
-    append_to_line(file, std::forward<Ts>(rest)...);
-}
-
-template <class T, class... Ts, size_t N = T::size()>
-static inline void writePlotDataImpl(std::fstream &file, T ref, T dist, int,
-                                     const Ts &... extra_data)
-{
-  for (size_t i = 0; i < N; ++i) {
-    file << std::setprecision(50) << ref[i] << '\t' << dist[i];
-    append_to_line(file, extra_data[i]...);
-    file << '\n';
-  }
-}
-template <class T, class... Ts>
-static inline void writePlotDataImpl(std::fstream &file, T ref, T dist, float,
-                                     Ts &&... extra_data)
-{
-  file << std::setprecision(50) << ref << '\t' << dist;
-  append_to_line(file, std::forward<Ts>(extra_data)...);
-  file << '\n';
-}
-
-template <class T, class... Ts>
-inline void Compare::writePlotData(std::fstream &file, T a, T b, Ts &&... extra_data)
-{
-  const T ref = b;
-  using vir::detail::ulpDiffToReferenceSigned;
-  const T dist = ulpDiffToReferenceSigned(a, b);
-  writePlotDataImpl(file, ref, dist, int(), std::forward<Ts>(extra_data)...);
-}
 
 // assert_impl (called from assert macro) {{{1
 struct assert_impl {
@@ -1144,7 +1126,7 @@ struct TestData {
   TestFunction f;
   std::string name;
 };
-vector<TestData> allTests;
+std::vector<TestData> allTests;
 
 // class Test {{{1
 template <typename TestWrapper, typename Exception = void>
@@ -1186,7 +1168,14 @@ static int addTestInstantiations(const char *basename, Typelist<Ts...>)
 }  // namespace detail
 
 // setFuzzyness {{{1
-template <typename T> inline void setFuzzyness(T fuzz)
+template <typename T> inline void set_allowed_ulp_error(T fuzz)
+{
+  detail::global_unit_test_object_.fuzzyness<T>() = fuzz;
+}
+
+template <typename T>
+VIR_DEPRECATED("use vir::test::set_allowed_ulp_error<type>(<ulp>)")
+inline void setFuzzyness(T fuzz)
 {
   detail::global_unit_test_object_.fuzzyness<T>() = fuzz;
 }
@@ -1217,10 +1206,12 @@ template <typename T> detail::PrintMemDecorator<T> asBytes(const T &x) { return 
 // COMPARE {{{1
 #define COMPARE(a, b) vir::test::detail::Compare(a, b, #a, #b, __FILE__, __LINE__) << ' '
 // COMPARE_NOEQ {{{1
+/*
 #define COMPARE_NOEQ(a, b)                                                               \
   vir::test::detail::Compare(a, b, #a, #b, __FILE__, __LINE__,                           \
                              vir::test::detail::Compare::NoEq())                         \
       << ' '
+*/
 // MEMCOMPARE {{{1
 #define MEMCOMPARE(a, b)                                                                 \
   vir::test::detail::Compare(a, b, #a, #b, __FILE__, __LINE__,                           \
@@ -1262,8 +1253,10 @@ public:
   }
 };
 
-// EXPECT_FAILURE {{{1
+// expect_failure {{{1
+VIR_DEPRECATED("use vir::test::expect_failure() instead")
 void EXPECT_FAILURE() { detail::global_unit_test_object_.expect_failure = true; }
+void expect_failure() { detail::global_unit_test_object_.expect_failure = true; }
 
 // expect_assert_failure {{{1
 template <class F> inline void expect_assert_failure(F &&f)

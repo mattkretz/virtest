@@ -33,16 +33,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define VIR_NEVER_INLINE [[gnu::noinline]]
 #define VIR_CONST __attribute__((const))
 #define VIR_IS_UNLIKELY(x) __builtin_expect(x, 0)
-#elif _MSC_VER
+# ifdef __INTEL_COMPILER_BUILD_DATE
+#define VIR_DEPRECATED(msg)
+# else
+#define VIR_DEPRECATED(msg) [[gnu::deprecated(msg)]]
+# endif
+#elif defined _MSC_VER
 #define VIR_ALWAYS_INLINE inline __forceinline
 #define VIR_NEVER_INLINE
 #define VIR_CONST __declspec(noalias)
 #define VIR_IS_UNLIKELY(x) x
+#define VIR_DEPRECATED(msg) __declspec(deprecated(msg))
 #else
 #define VIR_ALWAYS_INLINE inline
 #define VIR_NEVER_INLINE
 #define VIR_CONST
 #define VIR_IS_UNLIKELY(x) x
+#define VIR_DEPRECATED(msg) [[deprecated(msg)]]
 #endif
 
 #endif  // VIR_DETAIL_MACROS_H_
