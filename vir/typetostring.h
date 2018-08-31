@@ -35,13 +35,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #elif defined COMPILE_FOR_UNIT_TESTS
 #  include <Vc/fwddecl.h>
 #endif
-#include "typelist.h"
 #include <array>
 #include <sstream>
 #include <string>
-#include <typeinfo>
 #include <type_traits>
+#include <typeinfo>
+#include <utility>  // for __cpp_lib_integer_sequence
 #include <vector>
+#include "typelist.h"
 
 #ifdef __has_include
 #  if __has_include(<cxxabi.h>)
@@ -53,7 +54,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #  define VIR_HAVE_CXXABI_H 1
 #endif // __has_include
 
-#if defined __cpp_return_type_deduction && __cpp_return_type_deduction
+#if defined __cpp_return_type_deduction && __cpp_return_type_deduction &&                \
+    __cpp_lib_integer_sequence
 #define VIR_HAVE_CONSTEXPR_TYPESTRINGS 1
 #define VIR_AUTO_OR_STRING constexpr auto
 #define VIR_CONSTEXPR_STRING_RET(N_) constexpr constexpr_string<N_>
