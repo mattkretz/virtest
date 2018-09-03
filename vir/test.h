@@ -561,11 +561,11 @@ public:
   }
 
   // Normal Compare ctor {{{2
-  template <class T1, class T2, class Traits = compare_traits<T1, T2>>
-  VIR_ALWAYS_INLINE Compare(
-      const T1 &a, const T2 &b, const char *_a, const char *_b, const char *_file,
-      typename std::enable_if<!Traits::use_memcompare && !require_fuzzy_compare<Traits>(),
-                              int>::type _line)
+  template <class T1, class T2, class..., class Traits = compare_traits<T1, T2>,
+            class = typename std::enable_if<!Traits::use_memcompare &&
+                                            !require_fuzzy_compare<Traits>()>::type>
+  VIR_ALWAYS_INLINE Compare(const T1 &a, const T2 &b, const char *_a, const char *_b,
+                            const char *_file, int _line)
       : m_ip(getIp()), m_failed(!Traits::is_equal(a, b))
   {
     if (VIR_IS_UNLIKELY(m_failed)) {
@@ -573,11 +573,11 @@ public:
     }
   }
 
-  template <class T1, class T2, class Traits = compare_traits<T1, T2>>
-  VIR_ALWAYS_INLINE Compare(
-      const T1 &a, const T2 &b, const char *_a, const char *_b, const char *_file,
-      typename std::enable_if<!Traits::use_memcompare && require_fuzzy_compare<Traits>(),
-                              int>::type _line)
+  template <class T1, class T2, class..., class Traits = compare_traits<T1, T2>, class...,
+            class = typename std::enable_if<!Traits::use_memcompare &&
+                                            require_fuzzy_compare<Traits>()>::type>
+  VIR_ALWAYS_INLINE Compare(const T1 &a, const T2 &b, const char *_a, const char *_b,
+                            const char *_file, int _line)
       : m_ip(getIp())
       , m_failed(!Traits::ulp_compare_and_log(Traits::ulp_distance(a, b), 1))
   {
