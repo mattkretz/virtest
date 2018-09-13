@@ -60,7 +60,7 @@ struct list_size<Typelist<Ts...>>
 };
 
 // list indexing (C++14){{{1
-#if __cplusplus >= 201402L
+#if __cpp_lib_integer_sequence
 namespace TypelistIndexing
 {
 template <std::size_t I, typename T> struct indexed {
@@ -72,7 +72,7 @@ struct indexer<std::index_sequence<Is...>, Ts...> : indexed<Is, Ts>... {
 };
 template <std::size_t I, typename T> static indexed<I, T> select(indexed<I, T>);
 }  // namespace TypelistIndexing
-#endif  // C++14
+#endif  // __cpp_lib_integer_sequence
 
 // concat {{{1
 template <typename... More> struct concat_impl;
