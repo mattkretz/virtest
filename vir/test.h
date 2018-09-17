@@ -545,9 +545,6 @@ public:
   struct AbsoluteError {};
   struct RelativeError {};
   struct Mem {};
-  struct Sentinel {
-    Sentinel operator[](std::size_t) const { return {}; }
-  };
 
   // require_fuzzy_compare {{{2
   template <class Traits> static constexpr bool require_fuzzy_compare()
@@ -561,7 +558,7 @@ public:
   }
 
   // Normal Compare ctor {{{2
-  template <class T1, class T2, class..., class Traits = compare_traits<T1, T2>,
+  template <class T1, class T2, class Traits = compare_traits<T1, T2>,
             class = typename std::enable_if<!Traits::use_memcompare &&
                                             !require_fuzzy_compare<Traits>()>::type>
   VIR_ALWAYS_INLINE Compare(const T1 &a, const T2 &b, const char *_a, const char *_b,
@@ -573,9 +570,10 @@ public:
     }
   }
 
-  template <class T1, class T2, class..., class Traits = compare_traits<T1, T2>, class...,
+  template <class T1, class T2, class Traits = compare_traits<T1, T2>,
             class = typename std::enable_if<!Traits::use_memcompare &&
-                                            require_fuzzy_compare<Traits>()>::type>
+                                            require_fuzzy_compare<Traits>()>::type,
+            class = T1>
   VIR_ALWAYS_INLINE Compare(const T1 &a, const T2 &b, const char *_a, const char *_b,
                             const char *_file, int _line)
       : m_ip(getIp())
@@ -602,10 +600,11 @@ public:
     }
   }
 
-  template <class T1, class T2, class Traits = compare_traits<T1, T2>>
-  VIR_ALWAYS_INLINE Compare(
-      const T1 &a, const T2 &b, const char *_a, const char *_b, const char *_file,
-      typename std::enable_if<Traits::use_memcompare, int>::type _line)
+  template <class T1, class T2, class Traits = compare_traits<T1, T2>,
+            class = typename std::enable_if<Traits::use_memcompare>::type, class = T1,
+            class = T1>
+  VIR_ALWAYS_INLINE Compare(const T1 &a, const T2 &b, const char *_a, const char *_b,
+                            const char *_file, int _line)
       : Compare(a, b, _a, _b, _file, _line, Mem())
   {
   }
@@ -665,11 +664,10 @@ public:
 
   // Fuzzy Compare ctor {{{2
   // forward non-floating-point calls to the standard Compare
-  template <class T1, class T2, class Traits = compare_traits<T1, T2>, class... Ts>
-  VIR_ALWAYS_INLINE Compare(
-      const T1 &a, const T2 &b, const char *_a, const char *_b, const char *_file,
-      int _line, typename std::enable_if<!Traits::is_fuzzy_comparable, Fuzzy>::type,
-      Ts &&...)
+  template <class T1, class T2, class Traits = compare_traits<T1, T2>, class... Ts,
+            class = typename std::enable_if<!Traits::is_fuzzy_comparable>::type>
+  VIR_ALWAYS_INLINE Compare(const T1 &a, const T2 &b, const char *_a, const char *_b,
+                            const char *_file, int _line, Fuzzy, Ts &&...)
       : Compare(a, b, _a, _b, _file, _line)
   {
   }
@@ -688,11 +686,11 @@ public:
    *
    * \see setFuzzyness
    */
-  template <class T1, class T2, class Traits = compare_traits<T1, T2>, class... Ts>
-  VIR_ALWAYS_INLINE Compare(
-      const T1 &a, const T2 &b, const char *_a, const char *_b, const char *_file,
-      int _line, typename std::enable_if<Traits::is_fuzzy_comparable, Fuzzy>::type,
-      Ts &&... extra_data)
+  template <class T1, class T2, class Traits = compare_traits<T1, T2>, class... Ts,
+            class = typename std::enable_if<Traits::is_fuzzy_comparable>::type,
+            class = T1>
+  VIR_ALWAYS_INLINE Compare(const T1 &a, const T2 &b, const char *_a, const char *_b,
+                            const char *_file, int _line, Fuzzy, Ts &&... extra_data)
       : m_ip(getIp())
       , m_failed(!Traits::ulp_compare_and_log(
             Traits::ulp_distance(a, b),
@@ -721,58 +719,11 @@ public:
       print(" ulp");
     }
     if (global_unit_test_object_.plotFile.is_open()) {
-      global_unit_test_object_.plotFile << call_to_datafile_string<Traits>(
+      global_unit_test_object_.plotFile << Traits::to_datafile_string(
           b, Traits::ulp_distance_signed(a, b), std::forward<Ts>(extra_data)...);
     }
   }
 
-private:
-  // the call_to_datafile_string hack exists to remove the Sentinel object at the end
-  // with C++14 it could be generic, when called with
-  // std::make_indexsequence<sizeof...(Ts) - 1>:
-  //
-  // template <class Traits, std::size_t... Is, class... Ts>
-  // std::string call_to_datafile_string(std::index_sequence<Is...>, Ts &&... args)
-  // {
-  //   Traits::to_datafile_string(
-  //       std::get<Is>(std::forward_as_tuple(std::forward<Ts>(args)...))...);
-  // }
-  template <class Traits>
-  std::string call_to_datafile_string(const typename Traits::common_type &a,
-                                      const typename Traits::common_type &b, Sentinel)
-  {
-    return Traits::to_datafile_string(a, b);
-  }
-  template <class Traits, class T0>
-  std::string call_to_datafile_string(const typename Traits::common_type &a,
-                                      const typename Traits::common_type &b, const T0 &c,
-                                      Sentinel)
-  {
-    return Traits::to_datafile_string(a, b, c);
-  }
-  template <class Traits, class T0, class T1>
-  std::string call_to_datafile_string(const typename Traits::common_type &a,
-                                      const typename Traits::common_type &b, const T0 &c,
-                                      const T1 &d, Sentinel)
-  {
-    return Traits::to_datafile_string(a, b, c, d);
-  }
-  template <class Traits, class T0, class T1, class T2>
-  std::string call_to_datafile_string(const typename Traits::common_type &a,
-                                      const typename Traits::common_type &b, const T0 &c,
-                                      const T1 &d, const T2 &e, Sentinel)
-  {
-    return Traits::to_datafile_string(a, b, c, d, e);
-  }
-  template <class Traits, class T0, class T1, class T2, class T3>
-  std::string call_to_datafile_string(const typename Traits::common_type &a,
-                                      const typename Traits::common_type &b, const T0 &c,
-                                      const T1 &d, const T2 &e, const T3 &f, Sentinel)
-  {
-    return Traits::to_datafile_string(a, b, c, d, e, f);
-  }
-
-public:
   // Absolute Error Compare ctor {{{2
   template <typename T, typename ET>
   VIR_ALWAYS_INLINE Compare(const T &a, const T &b, const char *_a, const char *_b,
@@ -1135,7 +1086,7 @@ struct Test : public TestWrapper {
   {
     try {
       TestWrapper::run();
-    } catch (const Exception &e) {
+    } catch (const Exception &) {
       return;
     }
     std::cout << failString() << "The test was expected to throw an exception of type '"
@@ -1186,11 +1137,14 @@ template <typename T> detail::PrintMemDecorator<T> asBytes(const T &x) { return 
 // FUZZY_COMPARE {{{1
 // Workaround for clang: The "<< ' '" is only added to silence the warnings
 // about unused return values.
-#define FUZZY_COMPARE_WRAPPER(a, b, ...)                                                 \
+#define FUZZY_COMPARE(a, b)                                                              \
   vir::test::detail::Compare(a, b, #a, #b, __FILE__, __LINE__,                           \
-                             vir::test::detail::Compare::Fuzzy(), __VA_ARGS__)
-#define FUZZY_COMPARE(...)                                                               \
-  FUZZY_COMPARE_WRAPPER(__VA_ARGS__, vir::test::detail::Compare::Sentinel()) << ' '
+                             vir::test::detail::Compare::Fuzzy())                        \
+      << ' '
+#define FUZZY_COMPARE_WITH_EXTRA_COLUMNS(a, b, ...)                                      \
+  vir::test::detail::Compare(a, b, #a, #b, __FILE__, __LINE__,                           \
+                             vir::test::detail::Compare::Fuzzy(), __VA_ARGS__)           \
+      << ' '
 // COMPARE_ABSOLUTE_ERROR {{{1
 #define COMPARE_ABSOLUTE_ERROR(a_, b_, error_, ...)                                      \
   vir::test::detail::Compare(a_, b_, #a_, #b_, __FILE__, __LINE__,                       \
