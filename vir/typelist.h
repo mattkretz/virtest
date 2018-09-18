@@ -60,7 +60,7 @@ struct list_size<Typelist<Ts...>>
 };
 
 // list indexing (C++14){{{1
-#if __cpp_lib_integer_sequence
+#ifdef __cpp_lib_integer_sequence
 namespace TypelistIndexing
 {
 template <std::size_t I, typename T> struct indexed {
