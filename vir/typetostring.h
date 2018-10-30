@@ -29,7 +29,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define VIR_TYPETOSTRING_H_
 
 #ifdef __has_include
-#  if __has_include(<Vc/fwddecl.h>)
+#  if __has_include(<Vc/bits/simd_detail.h>)
+#    include <Vc/bits/simd_detail.h>
+#  elif __has_include(<Vc/fwddecl.h>)
 #    include <Vc/fwddecl.h>
 #  endif
 #elif defined COMPILE_FOR_UNIT_TESTS
