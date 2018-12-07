@@ -83,8 +83,12 @@ inline T ulpDiffToReference(const T &val_, const T &ref_)
   where(val == 0, diff) += 1;
   where(val == 0, val) = limits::min();
 
-  decltype(fpclassify(std::declval<T>())) exp = {};
+  using I = decltype(fpclassify(std::declval<T>()));
+  I exp = {};
   frexp(ref, &exp);
+  // lower bound for exp must be min_exponent to scale the resulting difference from a
+  // denormal correctly
+  exp = max(exp, I(limits::min_exponent));
   diff += ldexp(abs(ref - val), limits::digits - exp);
   where(val_ == ref_ || (isnan(val_) && isnan(ref_)), diff) = T();
   return diff;
