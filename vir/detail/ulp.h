@@ -69,10 +69,11 @@ inline T ulpDiffToReference(const T &val_, const T &ref_)
   T diff = T();
 
   using std::abs;
-  using std::frexp;
-  using std::ldexp;
-  using std::isnan;
   using std::fpclassify;
+  using std::frexp;
+  using std::isnan;
+  using std::ldexp;
+  using std::max;
   using limits = std::numeric_limits<value_type_t<T>>;
 
   where(ref == 0, val) = abs(val);
