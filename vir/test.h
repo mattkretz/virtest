@@ -33,7 +33,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "detail/color.h"
 #include "detail/ulp.h"
 #include "detail/type_traits.h"
+
 #include <array>
+#include <cfenv>  // fesetround / FE_TONEAREST...
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
@@ -43,6 +45,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sstream>
 #include <typeinfo>
 #include <vector>
+
 #ifdef HAVE_CXX_ABI_H
 #include <cxxabi.h>
 #endif
@@ -372,6 +375,7 @@ public:
   bool status;
   bool expect_failure;
   bool expect_assert_failure;
+  bool test_roundingmodes = false;
   const char *only_name;
   const char *test_name = nullptr;
   bool vim_lines = false;
@@ -1227,7 +1231,7 @@ static void initTest(int argc, char **argv)  //{{{1
 {
   for (int i = 1; i < argc; ++i) {
     if (0 == std::strcmp(argv[i], "--help") || 0 == std::strcmp(argv[i], "-h")) {
-      std::cout << "Usage: " << argv[0] << " [-h|--help] [--only <testname>] [-v|--vim] "
+      std::cout << "Usage: " << argv[0] << " [-h|--help] [--only <testname>] [-v|--vim] [-r|--roundingmodes]"
                                            "[--maxdist] [--plotdist <plot.dat>]\n";
       exit(0);
     }
@@ -1240,14 +1244,32 @@ static void initTest(int argc, char **argv)  //{{{1
       detail::global_unit_test_object_.plotFile << "# reference\tdistance\n";
     } else if (0 == std::strcmp(argv[i], "--vim") || 0 == std::strcmp(argv[i], "-v")) {
       detail::global_unit_test_object_.vim_lines = true;
+    } else if (0 == std::strcmp(argv[i], "--roundingmodes") || 0 == std::strcmp(argv[i], "-r")) {
+      detail::global_unit_test_object_.test_roundingmodes = true;
     }
   }
 }
 
 static void runAll() //{{{1
 {
-  for (const auto &data : detail::allTests) {
-    detail::global_unit_test_object_.runTestInt(data.f, data.name.c_str());
+  if (detail::global_unit_test_object_.test_roundingmodes) {
+    for (auto roundmode : {FE_TONEAREST, FE_DOWNWARD, FE_UPWARD, FE_TOWARDZERO}) {
+      std::cout << "-------- Setting rounding mode to "
+                << (roundmode == FE_TONEAREST
+                        ? "FE_TONEAREST"
+                        : roundmode == FE_DOWNWARD
+                              ? "FE_DOWNWARD"
+                              : roundmode == FE_UPWARD ? "FE_UPWARD" : "FE_TOWARDZERO")
+                << " --------\n";
+      for (const auto &data : detail::allTests) {
+        detail::global_unit_test_object_.runTestInt(data.f, data.name.c_str());
+      }
+    }
+    std::fesetround(FE_TONEAREST);
+  } else {
+    for (const auto &data : detail::allTests) {
+      detail::global_unit_test_object_.runTestInt(data.f, data.name.c_str());
+    }
   }
 }
 
