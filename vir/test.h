@@ -373,6 +373,7 @@ public:
   bool expect_failure;
   bool expect_assert_failure;
   const char *only_name;
+  const char *test_name = nullptr;
   bool vim_lines = false;
   std::fstream plotFile;
 
@@ -424,6 +425,7 @@ void UnitTester::runTestInt(TestFunction fun, const char *name)  //{{{1
   }
   global_unit_test_object_.status = true;
   global_unit_test_object_.expect_failure = false;
+  global_unit_test_object_.test_name = name;
   try {
     setFuzzyness<float>(1);
     setFuzzyness<double>(1);
@@ -1191,13 +1193,14 @@ public:
 };
 
 // ADD_PASS() << "text" {{{1
-class ADD_PASS
+struct ADD_PASS
 {
-public:
+  const char *test_name = 0;
   ADD_PASS()
   {
     ++detail::global_unit_test_object_.passedTests;
     detail::printPass();
+    std::cout << detail::global_unit_test_object_.test_name << ' ';
   }
   ~ADD_PASS() { std::cout << std::endl; }
   template <typename T> ADD_PASS &operator<<(const T &x)
