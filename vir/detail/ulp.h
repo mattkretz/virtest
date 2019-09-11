@@ -72,6 +72,7 @@ inline T ulpDiffToReference(const T &val_, const T &ref_)
   using std::fpclassify;
   using std::frexp;
   using std::isnan;
+  using std::isinf;
   using std::ldexp;
   using std::max;
   using limits = std::numeric_limits<value_type_t<T>>;
@@ -79,6 +80,7 @@ inline T ulpDiffToReference(const T &val_, const T &ref_)
   where(ref == 0, val) = abs(val);
   where(ref == 0, diff) = 1;
   where(ref == 0, ref) = limits::min();
+  where(isinf(ref) && ref == val, ref) = 0; // where(val_ == ref_) = 0 below will fix it up
 
   where(val == 0, ref) = abs(ref);
   where(val == 0, diff) += 1;
