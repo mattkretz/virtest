@@ -573,6 +573,7 @@ public:
   {
     if (VIR_IS_UNLIKELY(m_failed)) {
       printFailure(a, b, _a, _b, _file, _line);
+      print(' ');
     }
   }
 
@@ -603,6 +604,7 @@ public:
       print("\ndistance: ");
       print(Traits::ulp_distance_signed(a, b));
       print(" ulp, allowed distance: ±1 ulp (automatic fuzzy compare to work around x87 quirks)");
+      print(' ');
     }
   }
 
@@ -641,6 +643,7 @@ public:
       printMem(valueA);
       print('\n');
       printMem(valueB);
+      print(' ');
     }
   }
 
@@ -723,6 +726,7 @@ public:
       print(" ulp, allowed distance: ±");
       print(global_unit_test_object_.fuzzyness<T>());
       print(" ulp");
+      print(' ');
     }
     if (global_unit_test_object_.plotFile.is_open()) {
       global_unit_test_object_.plotFile << Traits::to_datafile_string(
@@ -764,6 +768,7 @@ public:
       using vir::detail::ulpDiffToReferenceSigned;
       print(ulpDiffToReferenceSigned(a, b));
       print(" ulp");
+      print(' ');
     }
   }
 
@@ -810,6 +815,7 @@ public:
       using vir::detail::ulpDiffToReferenceSigned;
       print(ulpDiffToReferenceSigned(a, b));
       print(" ulp");
+      print(' ');
     }
   }
 
@@ -821,6 +827,7 @@ public:
       printFirst();
       printPosition(_file, _line);
       print(cond);
+      print(' ');
     }
   }
 
@@ -829,6 +836,16 @@ public:
   {
     printFirst();
     printPosition(_file, _line);
+    print(' ');
+  }
+
+  // on_failure {{{2
+  template <typename... Ts> VIR_ALWAYS_INLINE const Compare& on_failure(const Ts&... xs) const
+  {
+    if (VIR_IS_UNLIKELY(m_failed)) {
+      [](auto...) {}((print(xs), 0)...);
+    }
+    return *this;
   }
 
   // stream operators {{{2
@@ -1029,6 +1046,10 @@ VIR_NEVER_INLINE void Compare::printFailure(const T1 &a, const T2 &b, const char
 template <typename T> struct PrintMemDecorator {
   T x;
 };
+template <typename T, int N> struct PrintMemDecorator<T[N]> {
+  PrintMemDecorator(const T *init) { std::copy(init, init + N, x); }
+  T x[N];
+};
 
 // assert_impl (called from assert macro) {{{1
 struct assert_impl {
@@ -1145,26 +1166,22 @@ template <typename T> detail::PrintMemDecorator<T> asBytes(const T &x) { return 
 // about unused return values.
 #define FUZZY_COMPARE(a, b)                                                              \
   vir::test::detail::Compare(a, b, #a, #b, __FILE__, __LINE__,                           \
-                             vir::test::detail::Compare::Fuzzy())                        \
-      << ' '
+                             vir::test::detail::Compare::Fuzzy())
 #define FUZZY_COMPARE_WITH_EXTRA_COLUMNS(a, b, ...)                                      \
   vir::test::detail::Compare(a, b, #a, #b, __FILE__, __LINE__,                           \
-                             vir::test::detail::Compare::Fuzzy(), __VA_ARGS__)           \
-      << ' '
+                             vir::test::detail::Compare::Fuzzy(), __VA_ARGS__)
 // COMPARE_ABSOLUTE_ERROR {{{1
 #define COMPARE_ABSOLUTE_ERROR(a_, b_, error_, ...)                                      \
   vir::test::detail::Compare(a_, b_, #a_, #b_, __FILE__, __LINE__,                       \
                              vir::test::detail::Compare::AbsoluteError(), error_,        \
-                             __VA_ARGS__)                                                \
-      << ' '
+                             __VA_ARGS__)
 // COMPARE_RELATIVE_ERROR {{{1
 #define COMPARE_RELATIVE_ERROR(a_, b_, error_, ...)                                      \
   vir::test::detail::Compare(a_, b_, #a_, #b_, __FILE__, __LINE__,                       \
                              vir::test::detail::Compare::RelativeError(), error_,        \
-                             __VA_ARGS__)                                                \
-      << ' '
+                             __VA_ARGS__)
 // COMPARE {{{1
-#define COMPARE(a, b) vir::test::detail::Compare(a, b, #a, #b, __FILE__, __LINE__) << ' '
+#define COMPARE(a, b) vir::test::detail::Compare(a, b, #a, #b, __FILE__, __LINE__)
 // COMPARE_NOEQ {{{1
 /*
 #define COMPARE_NOEQ(a, b)                                                               \
@@ -1175,12 +1192,11 @@ template <typename T> detail::PrintMemDecorator<T> asBytes(const T &x) { return 
 // MEMCOMPARE {{{1
 #define MEMCOMPARE(a, b)                                                                 \
   vir::test::detail::Compare(a, b, #a, #b, __FILE__, __LINE__,                           \
-                             vir::test::detail::Compare::Mem())                          \
-      << ' '
+                             vir::test::detail::Compare::Mem())
 // VERIFY {{{1
-#define VERIFY(cond) vir::test::detail::Compare(cond, #cond, __FILE__, __LINE__) << ' '
+#define VERIFY(cond) vir::test::detail::Compare(cond, #cond, __FILE__, __LINE__)
 // FAIL {{{1
-#define FAIL() vir::test::detail::Compare(__FILE__, __LINE__) << ' '
+#define FAIL() vir::test::detail::Compare(__FILE__, __LINE__)
 
 // SKIP {{{1
 class SKIP
