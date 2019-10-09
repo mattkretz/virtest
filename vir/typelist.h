@@ -390,7 +390,19 @@ template <class R> struct apply_filter<R, R> {
 };
 }  // namespace detail
 
+template <template<class> class Trait> struct filter_predicate {
+};
+
 template <class ToRemove, class List> struct filter_list;
+
+template <template <class> class Trait, class... Ts>
+struct filter_list<filter_predicate<Trait>, Typelist<Ts...>> {
+  template <class T>
+  using filtered =
+      typename std::conditional<Trait<T>::value, Typelist<>, Typelist<T>>::type;
+  using type = concat<filtered<Ts>...>;
+};
+
 template <class ToRemove, class... Ts> struct filter_list<ToRemove, Typelist<Ts...>> {
   using type = concat<typename detail::apply_filter<ToRemove, Ts>::type...>;
 };
