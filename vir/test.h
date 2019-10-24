@@ -843,7 +843,7 @@ public:
   template <typename... Ts> VIR_ALWAYS_INLINE const Compare& on_failure(const Ts&... xs) const
   {
     if (VIR_IS_UNLIKELY(m_failed)) {
-      [](auto...) {}((print(xs), 0)...);
+      [](const std::initializer_list<int> &) {}({(print(xs), 0)...});
     }
     return *this;
   }
