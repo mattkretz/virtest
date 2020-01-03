@@ -730,7 +730,7 @@ public:
     }
     if (global_unit_test_object_.plotFile.is_open()) {
       global_unit_test_object_.plotFile << Traits::to_datafile_string(
-          b, Traits::ulp_distance_signed(a, b), std::forward<Ts>(extra_data)...);
+          b, Traits::ulp_distance_signed(a, b), static_cast<Ts&&>(extra_data)...);
     }
   }
 
@@ -1075,7 +1075,7 @@ struct assert_impl {
   template <class T> VIR_ALWAYS_INLINE assert_impl &operator<<(T &&x)
   {
     if (VIR_IS_UNLIKELY(out_ptr != nullptr)) {
-      print(std::forward<T>(x));
+      print(static_cast<T&&>(x));
     }
     return *this;
   }
@@ -1083,7 +1083,7 @@ struct assert_impl {
 private:
   template <class T> void print(T &&x) const
   {
-    *out_ptr << std::forward<T>(x);
+    *out_ptr << static_cast<T&&>(x);
   }
   void finalize() noexcept(false)
   {
@@ -1098,7 +1098,7 @@ private:
 struct TestData {
   template <class F, class S>
   TestData(F &&f_, S &&name_)
-      : f(std::forward<F>(f_)), name(std::forward<S>(name_))
+      : f(static_cast<F&&>(f_)), name(static_cast<S&&>(name_))
   {
   }
   TestFunction f;
@@ -1207,7 +1207,7 @@ public:
   ~SKIP() noexcept(false) { throw detail::SkippedTest{stream.str()}; }
   template <typename T> SKIP &operator<<(T &&x)
   {
-    stream << std::forward<T>(x);
+    stream << static_cast<T&&>(x);
     return *this;
   }
 };
@@ -1239,7 +1239,7 @@ void expect_failure() { detail::global_unit_test_object_.expect_failure = true; 
 template <class F> inline void expect_assert_failure(F &&f)
 {
   detail::global_unit_test_object_.expect_assert_failure = true;
-  std::forward<F>(f)();
+  static_cast<F&&>(f)();
   detail::global_unit_test_object_.expect_assert_failure = false;
 }
 //}}}1

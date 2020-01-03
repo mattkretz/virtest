@@ -60,7 +60,7 @@ template <class... Ts> constexpr bool operator_is_substitution_failure()
 #endif
 template <class... Args, class F>
 constexpr auto sfinae_is_callable_impl(int, F &&f) -> typename std::conditional<
-    true, std::true_type, decltype(std::forward<F>(f)(std::declval<Args>()...))>::type;
+    true, std::true_type, decltype(static_cast<F&&>(f)(std::declval<Args>()...))>::type;
 template <class... Args, class F> constexpr std::false_type sfinae_is_callable_impl(float, const F &);
 template <class... Args, class F> constexpr bool sfinae_is_callable(F &&)
 {
