@@ -1230,8 +1230,8 @@ struct ADD_PASS
 
 // expect_failure {{{1
 VIR_DEPRECATED("use vir::test::expect_failure() instead")
-void EXPECT_FAILURE() { detail::global_unit_test_object_.expect_failure = true; }
-void expect_failure() { detail::global_unit_test_object_.expect_failure = true; }
+inline void EXPECT_FAILURE() { detail::global_unit_test_object_.expect_failure = true; }
+inline void expect_failure() { detail::global_unit_test_object_.expect_failure = true; }
 
 // expect_assert_failure {{{1
 template <class F> inline void expect_assert_failure(F &&f)
