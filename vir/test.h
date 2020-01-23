@@ -1171,15 +1171,13 @@ template <typename T> detail::PrintMemDecorator<T> asBytes(const T &x) { return 
   vir::test::detail::Compare(a, b, #a, #b, __FILE__, __LINE__,                           \
                              vir::test::detail::Compare::Fuzzy(), __VA_ARGS__)
 // COMPARE_ABSOLUTE_ERROR {{{1
-#define COMPARE_ABSOLUTE_ERROR(a_, b_, error_, ...)                                      \
+#define COMPARE_ABSOLUTE_ERROR(a_, b_, error_)                                           \
   vir::test::detail::Compare(a_, b_, #a_, #b_, __FILE__, __LINE__,                       \
-                             vir::test::detail::Compare::AbsoluteError(), error_,        \
-                             __VA_ARGS__)
+                             vir::test::detail::Compare::AbsoluteError(), error_)
 // COMPARE_RELATIVE_ERROR {{{1
-#define COMPARE_RELATIVE_ERROR(a_, b_, error_, ...)                                      \
+#define COMPARE_RELATIVE_ERROR(a_, b_, error_)                                           \
   vir::test::detail::Compare(a_, b_, #a_, #b_, __FILE__, __LINE__,                       \
-                             vir::test::detail::Compare::RelativeError(), error_,        \
-                             __VA_ARGS__)
+                             vir::test::detail::Compare::RelativeError(), error_)
 // COMPARE {{{1
 #define COMPARE(a, b) vir::test::detail::Compare(a, b, #a, #b, __FILE__, __LINE__)
 // COMPARE_NOEQ {{{1
