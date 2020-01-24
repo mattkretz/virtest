@@ -50,193 +50,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cxxabi.h>
 #endif
 
-#ifdef DOXYGEN
-
-/**
- * \defgroup unittest Unit Testing
- * @{
- *
- * In Vc we use a unit testing framework that was developed for easy use with typelists (i.e. the Vc
- * SIMD types).
- * It simplifies test creation to the bare minimum. The following code suffices to
- * run a test:
- * \code
- * #include "tests/unittest.h"
- *
- * TEST(test_name) {
- *   int test = 1 + 1;
- *   COMPARE(test, 2) << "more details";
- *   VERIFY(1 > 0);
- * }
- * \endcode
- * This creates one test function (called "test_name"). This function is called
- * without any further code and executes to checks. If, for some reason, the
- * compiler would determine that test needs to have the value 3, then the output
- * would be:
-   \verbatim
-    FAIL: ┍ at tests/testfile.cpp:5 (0x40451f):
-    FAIL: │ test (3) == 2 (2) -> false more details
-    FAIL: ┕ test_name
-
-    Testing done. 0 tests passed. 1 tests failed.
-   \endverbatim
- * Let's take a look at what this tells us.
- * 1. The test macro that failed was in testfile.cpp in line 5.
- * 2. If you want to look at the disassembly, the failure was at 0x40451f.
- * 3. The COMPARE macro compared the expression `test` against the expression
- *    `2`. It shows that `test` had a value of `3` while `2` had a value of `2`
- *    (what a surprise). Since the values are not equal `test == 2` returns \c
- *    false.
- * 4. The COMPARE, FUZZY_COMPARE, VERIFY, and FAIL macros can be used as
- *    streams. The output will only appear on failure and will be printed right
- *    after the normal output of the macro.
- * 5. Finally the name of the failed test (the name specified inside the TEST()
- *    macro) is printed.
- * 6. At the end of the run, a summary of the test results is shown. This may be
- *    important when there are many TEST functions.
- *
- * If the test passed you'll see:
-   \verbatim
-    PASS: test_name
-
-    Testing done. 1 tests passed. 0 tests failed.
-   \endverbatim
- */
-
-/**
- * \brief Defines a test function.
- *
- * Consider this to expand to `void
- * function_name()`. The function_name will also be the name that appears in the
- * output after PASS/FAIL.
- */
-#define TEST(function_name)
-
-/**
- * \brief Same as above, but expects the code to throw an exception of type \p
- * ExceptionType.
- *
- * If the code does not throw (or throws a different exception),
- * the test is considered failed.
- */
-#define TEST_CATCH(function_name, ExceptionType)
-
-/**
- * \brief Tests that should be tested with several types as template parameter
- * can use this macro.
- *
- * Your test function then has this signature: `template <typename
- * T> void function_name()`.
- */
-#define TEST_BEGIN(T, function_name, typelist)
-
-/**
- * \brief Test functions created with TEST_BEGIN need to end with TEST_END.
- */
-#define TEST_END
-
-/**
- * \brief Verifies that \p condition is \c true.
- */
-#define VERIFY(condition)
-
-/**
- * \brief Verifies that \p test_value is equal to \p reference.
- */
-#define COMPARE(test_value, reference)
-
-/**
- * \brief Verifies that the difference between \p test_value and \p reference is
- * smaller than \p allowed_difference.
- *
- * If the test fails the output will show the actual difference between \p
- * test_value and \p reference. If this value is positive \p test_value is too
- * large. If it is negative \p test_value is too small.
- */
-#define COMPARE_ABSOLUTE_ERROR(test_value, reference, allowed_difference)
-
-/**
- * \brief Verifies that the difference between \p test_value and \p reference is
- * smaller than `allowed_relative_difference * reference`.
- *
- * If the test fails the output will show the actual difference between \p
- * test_value and \p reference. If this value is positive \p test_value is too
- * large. If it is negative \p test_value is too small.
- *
- * The following example tests that `a` is no more than 1% different from `b`:
- * \code
- * COMPARE_ABSOLUTE_ERROR(a, b, 0.01);
- * \endcode
- *
- * \note This test macro still works even if \p reference is set to 0. It will
- * then compare the difference against `allowed_relative_difference * <smallest
- * positive normalized value of reference type>`.
- */
-#define COMPARE_RELATIVE_ERROR(test_value, reference, allowed_relative_difference)
-
-/**
- * \brief Verifies that \p test_value is equal to \p reference within a
- * pre-defined distance in units of least precision (ulp).
- *
- * If the test fails it will print the distance in ulp between \p test_value and
- * \p reference as well as the maximum allowed distance. Often this difference
- * is not visible in the value because the conversion of a double/float to a
- * string needs to round the value to a sensible length.
- *
- * The allowed distance can be modified by calling:
- * \code
- * vir::test::setFuzzyness<float>(4);
- * vir::test::setFuzzyness<double>(7);
- * \endcode
- *
- * ### ulp
- * Unit of least precision is a unit that is derived from the the least
- * significant bit in the mantissa of a floating-point value. Consider a
- * single-precision number (23 mantissa bits) with exponent \f$e\f$. Then 1
- * ulp is \f$2^{e-23}\f$. Thus, \f$\log_2(u)\f$ signifies the the number
- * incorrect mantissa bits (with \f$u\f$ the distance in ulp).
- *
- * If \p test_value and \p reference have a different exponent the meaning of
- * ulp depends on the variable you look at. The FUZZY_COMPARE code always uses
- * \p reference to determine the magnitude of 1 ulp.
- *
- * Example:
- * The value `1.f` is `0x3f800000` in binary. The value
- * `1.00000011920928955078125f` with binary representation `0x3f800001`
- * therefore has a distance of 1 ulp.
- * A positive distance means the \p test_value is larger than the \p reference.
- * A negative distance means the \p test_value is smaller than the \p reference.
- * * `FUZZY_COMPARE(1.00000011920928955078125f, 1.f)` will show a distance of 1
- * * `FUZZY_COMPARE(1.f, 1.00000011920928955078125f)` will show a distance of -1
- *
- * The value `0.999999940395355224609375f` with binary representation
- * `0x3f7fffff` has a smaller exponent than `1.f`:
- * * `FUZZY_COMPARE(0.999999940395355224609375f, 1.f)` will show a distance of
- * -0.5
- * * `FUZZY_COMPARE(1.f, 0.999999940395355224609375f)` will show a distance of 1
- *
- * ### Comparing to 0
- * Distance to 0 is implemented as comparing to `std::numeric_limits<T>::min()`
- * instead and adding 1 to the resulting distance.
- */
-#define FUZZY_COMPARE(test_value, reference)
-
-/**
- * \brief Call this to fail a test.
- */
-#define FAIL()
-
-/**
- * \brief Wrap code that should fail an assertion with this macro.
- */
-#define EXPECT_ASSERT_FAILURE(code)
-
-/**
- * @}
- */
-
-#else
-
 namespace vir
 {
 namespace test
@@ -547,7 +360,6 @@ class Compare  //{{{1
 public:
   // tag types {{{2
   struct Fuzzy {};
-  //struct NoEq {};
   struct AbsoluteError {};
   struct RelativeError {};
   struct Mem {};
@@ -646,30 +458,6 @@ public:
       print(' ');
     }
   }
-
-  /* NoEq Compare ctor {{{2
-  template <typename T1, typename T2>
-  VIR_ALWAYS_INLINE Compare(const T1 &a, const T2 &b, const char *_a, const char *_b,
-                            const char *_file, int _line, NoEq)
-      : m_ip(getIp()), m_failed(!(a != b))
-  {
-    if (VIR_IS_UNLIKELY(m_failed)) {
-      printFirst();
-      printPosition(_file, _line);
-      print(_a);
-      print(" (");
-      print(std::setprecision(10));
-      print(a);
-      print(") == ");
-      print(_b);
-      print(" (");
-      print(std::setprecision(10));
-      print(b);
-      print(std::setprecision(6));
-      print(')');
-    }
-  }
-  */
 
   // Fuzzy Compare ctor {{{2
   // forward non-floating-point calls to the standard Compare
@@ -1162,8 +950,6 @@ inline void setFuzzyness(T fuzz)
 template <typename T> detail::PrintMemDecorator<T> asBytes(const T &x) { return {x}; }
 
 // FUZZY_COMPARE {{{1
-// Workaround for clang: The "<< ' '" is only added to silence the warnings
-// about unused return values.
 #define FUZZY_COMPARE(a, b)                                                              \
   vir::test::detail::Compare(a, b, #a, #b, __FILE__, __LINE__,                           \
                              vir::test::detail::Compare::Fuzzy())
@@ -1180,13 +966,6 @@ template <typename T> detail::PrintMemDecorator<T> asBytes(const T &x) { return 
                              vir::test::detail::Compare::RelativeError(), error_)
 // COMPARE {{{1
 #define COMPARE(a, b) vir::test::detail::Compare(a, b, #a, #b, __FILE__, __LINE__)
-// COMPARE_NOEQ {{{1
-/*
-#define COMPARE_NOEQ(a, b)                                                               \
-  vir::test::detail::Compare(a, b, #a, #b, __FILE__, __LINE__,                           \
-                             vir::test::detail::Compare::NoEq())                         \
-      << ' '
-*/
 // MEMCOMPARE {{{1
 #define MEMCOMPARE(a, b)                                                                 \
   vir::test::detail::Compare(a, b, #a, #b, __FILE__, __LINE__,                           \
@@ -1383,6 +1162,5 @@ main(int argc, char **argv)  //{{{1
 }
 
 //}}}1
-#endif  // DOXYGEN
 #endif  // VIR_TEST_H_
 // vim: foldmethod=marker
