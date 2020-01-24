@@ -680,7 +680,7 @@ public:
 private:
   static VIR_ALWAYS_INLINE size_t getIp()  //{{{2
   {
-    size_t _ip;
+    size_t _ip = 0;
 #ifdef __GNUC__
 #ifdef __x86_64__
     asm volatile("lea 0(%%rip),%0" : "=r"(_ip));
@@ -688,11 +688,9 @@ private:
     asm volatile("1: movl $1b,%0" : "=r"(_ip));
 #elif defined __arm__
     asm volatile("mov %0,pc" : "=r"(_ip));
-#else
-    _ip = 0;
+#elif defined __aarch64__
+    asm volatile("adr %0,." : "=r"(_ip));
 #endif
-#else   //__GNUC__
-    _ip = 0;
 #endif  //__GNUC__
     return _ip;
   }
