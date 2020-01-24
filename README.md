@@ -5,6 +5,7 @@
 
 [![Build Status](https://travis-ci.org/mattkretz/virtest.svg)](https://travis-ci.org/mattkretz/virtest)
 [![Build status](https://ci.appveyor.com/api/projects/status/lxqk5tqs4og6dr3e?svg=true)](https://ci.appveyor.com/project/mattkretz/virtest)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/77236083639c44a19c2d73609349f5a3)](https://www.codacy.com/manual/mattkretz/virtest?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=mattkretz/virtest&amp;utm_campaign=Badge_Grade)
 
 ## Why another test framework?
 
