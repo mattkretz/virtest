@@ -12,11 +12,16 @@ The test framework was developed inside the [Vc](https://github.com/VcDevel/Vc) 
 The goal was to build a test framework supporting:
 
 * Minimal / no test registration or setup. Just write the test function and you're good.
+
 * Simple way to disable compilation of tests, without having to comment out sections of the source
   file.
+
 * Simple instantiation of test code with types of a given list.
+
 * Support for fuzzy compares of floating point results with fine control over the ULP specification.
+
 * Assertion testing (i.e. verify that assertions fail on violated preconditions).
+
 * Simple but effective output (no XML, JSON, whatever; outputs a recognizable source location for more
   effective test driven development)
 
@@ -79,6 +84,7 @@ test.) You can use the following macros:
     smaller than the `reference`.
     * `FUZZY_COMPARE(1.00000011920928955078125f, 1.f)` will show a distance of 
       1 ulp
+
     * `FUZZY_COMPARE(1.f, 1.00000011920928955078125f)` will show a distance of 
       -1 ulp
       
@@ -86,6 +92,7 @@ test.) You can use the following macros:
     `0x3f7fffff` has a smaller exponent than `1.f`:
     * `FUZZY_COMPARE(0.999999940395355224609375f, 1.f)` will show a distance of
       -0.5 ulp
+
     * `FUZZY_COMPARE(1.f, 0.999999940395355224609375f)` will show a distance of 
       1 ulp
  
