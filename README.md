@@ -81,6 +81,7 @@ test.) You can use the following macros:
       1 ulp
     * `FUZZY_COMPARE(1.f, 1.00000011920928955078125f)` will show a distance of 
       -1 ulp
+      
     The value `0.999999940395355224609375f` with binary representation 
     `0x3f7fffff` has a smaller exponent than `1.f`:
     * `FUZZY_COMPARE(0.999999940395355224609375f, 1.f)` will show a distance of
@@ -108,8 +109,8 @@ test.) You can use the following macros:
   ```cpp
   COMPARE_ABSOLUTE_ERROR(a, b, 0.01);
   ```
-  If `reference` is set to 0, this macro compares the difference against `error 
-  * <smallest positive normalized value of reference type>`.
+  If `reference` is set to 0, this macro compares the difference against `error *
+  <smallest positive normalized value of reference type>`.
 
 * `MEMCOMPARE(value, reference)`
   Executes a memcmp over the storage bytes of `value` and `reference`. The 
