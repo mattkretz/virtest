@@ -385,7 +385,6 @@ public:
   {
     if (VIR_IS_UNLIKELY(m_failed)) {
       printFailure(a, b, _a, _b, _file, _line);
-      print(' ');
     }
   }
 
@@ -719,6 +718,23 @@ private:
   void printFailure(const T1 &a, const T2 &b, const char *_a, const char *_b,
                     const char *_file, int _line);
 
+  // printFpDiff {{{2
+  template <typename T1, typename T2>
+  typename std::enable_if<
+      std::is_floating_point<typename std::common_type<T1, T2>::type>::value, bool>::type
+  printFpDiff(const T1 &a, const T2 &b, int)
+  {
+    print(") Δ=");
+    print(a - b);
+    return true;
+  }
+
+  template <typename T1, typename T2>
+  constexpr bool printFpDiff(const T1 &, const T2 &, float)
+  {
+    return false;
+  }
+
   // printFirst {{{2
   static void printFirst()
   {
@@ -824,8 +840,11 @@ VIR_NEVER_INLINE void Compare::printFailure(const T1 &a, const T2 &b, const char
   print(std::setprecision(10));
   print(b);
   print(std::setprecision(6));
-  print(") -> ");
-  print(a == b);
+  if (!printFpDiff(a, b, int())) {
+    print(") -> ");
+    print(a == b);
+  }
+  print(' ');
 }
 
 // PrintMemDecorator{{{1

@@ -56,6 +56,12 @@ TEST(xfail)  //{{{1
   COMPARE(1, 2) << "\"output string\nwith newline\"";
 }
 
+TEST(xfail_fp)  //{{{1
+{
+  vir::test::expect_failure();
+  COMPARE(1.0, 1.000001).on_failure("should show Delta");
+}
+
 TEST_CATCH(test_catch, int)  //{{{1
 {
   throw int();
