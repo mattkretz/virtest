@@ -112,6 +112,9 @@ TEST(Typelist)  //{{{1
   COMPARE(typeid(outer_product<Typelist<_1, _2>, Typelist<_3, _4>>),
           typeid(Typelist<Typelist<_1, _3>, Typelist<_1, _4>, Typelist<_2, _3>,
                           Typelist<_2, _4>>));
+  COMPARE_TYPES(
+      outer_product<Typelist<_1, _2>, Typelist<_3, _4>>,
+      Typelist<Typelist<_1, _3>, Typelist<_1, _4>, Typelist<_2, _3>, Typelist<_2, _4>>);
 }
 
 // test_types[_check]  {{{1
