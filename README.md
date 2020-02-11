@@ -59,6 +59,12 @@ test.) You can use the following macros:
   padding bits. Also, if the equality operator does not return a boolean, the implementation will
   try to reduce the result to a boolean via calling `all_of(value == reference)`.
 
+* `COMPARE_TYPES(T1, T2)`
+  Test whether `T1` and `T2` are the same type (including value category). The 
+  comparison is done via `std::is_same`. On failure this test macro prints the 
+  `typeid` name wrapped inside a `vir::test::type<T>` template, to not lose 
+  information about cv- and ref-qualifiers (`typeid` drops them).
+
 * `FUZZY_COMPARE(value, reference)`
   Verifies that `value` is equal to `reference` within a pre-defined distance 
   in units of least precision (ulp). If the test fails it will print the 

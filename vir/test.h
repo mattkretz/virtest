@@ -983,6 +983,15 @@ template <typename T> detail::PrintMemDecorator<T> asBytes(const T &x) { return 
                              vir::test::detail::Compare::RelativeError(), error_)
 // COMPARE {{{1
 #define COMPARE(a, b) vir::test::detail::Compare(a, b, #a, #b, __FILE__, __LINE__)
+// COMPARE_TYPES {{{1
+template <class T> struct type {};
+template <class T1, class T2> using type1_t = type<T1>;
+template <class T1, class T2> using type2_t = type<T2>;
+#define COMPARE_TYPES(...)                                                              \
+  vir::test::detail::Compare(std::is_same<__VA_ARGS__>::value,                                  \
+                             "is_same_v<" #__VA_ARGS__ "> -> false", __FILE__, __LINE__)   \
+      .on_failure("\n left type: ", typeid(vir::test::type1_t<__VA_ARGS__>),                       \
+                  "\nright type: ", typeid(vir::test::type2_t<__VA_ARGS__>))
 // MEMCOMPARE {{{1
 #define MEMCOMPARE(a, b)                                                                 \
   vir::test::detail::Compare(a, b, #a, #b, __FILE__, __LINE__,                           \
