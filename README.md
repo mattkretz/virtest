@@ -147,6 +147,24 @@ test.) You can use the following macros:
   still end the test, but it will print `XFAIL` instead of `FAIL` and will not 
   count as a failed test in the summary.
 
+* `T vir::test::make_value_unknown(const T& x)`
+  The value returned from this function will be unknown to the compiler, 
+  inhibiting constant propagation optimization passes. This can be important to 
+  fully test whether an operation works correctly under all circumstances. Most 
+  importantly, some unit tests may compile to nothing (identified as dead code, 
+  i.e. code without side effects) if the compiler can infer the result from 
+  constant inputs. In such cases it may be important to make test values 
+  unknown to the compiler so that runtime behavior is actually tested.
+
+* `NOINLINE(<testable expression>)`
+  When a test fails and you want to identify the exact instruction sequence 
+  that lead to the failure, then wrapping the expression inside the `COMPARE` 
+  or `VERIFY` macro with `NOINLINE` can help you. It places the expression 
+  inside a return statement int a lambda which is executed in a function that 
+  is guaranteed to not get inlined. Consequently, the instruction pointer 
+  printed on failure takes you right after the `vir::test::noinline<...>` call 
+  where the failing test was evaluated.
+
 Example:
 ```cpp
 TEST(test_name) {
