@@ -55,16 +55,38 @@ namespace vir
 namespace test
 {
 // make_value_unknown {{{
-template <class T> T make_value_unknown(const T& x)
+#if __cplusplus < 201703
+template <bool> struct make_value_unknown_impl;
+template <> struct make_value_unknown_impl<true> {
+  template <class T> static VIR_ALWAYS_INLINE T apply(const T &x)
+  {
+    const volatile T &y = x;
+    return y;
+  }
+};
+template <> struct make_value_unknown_impl<false> {
+  template <class T> static VIR_ALWAYS_INLINE T apply(const T &x)
+  {
+    T y = x;
+    asm("" : "+m"(y));
+    return y;
+  }
+};
+#endif
+template <class T> VIR_ALWAYS_INLINE T make_value_unknown(const T &x)
 {
-    if constexpr (std::is_constructible_v<T, const volatile T&>) {
-        const volatile T& y = x;
-        return y;
-    } else {
-        T y = x;
-        asm("" : "+m"(y));
-        return y;
-    }
+#if __cplusplus >= 201703
+  if constexpr (std::is_constructible_v<T, const volatile T &>) {
+    const volatile T &y = x;
+    return y;
+  } else {
+    T y = x;
+    asm("" : "+m"(y));
+    return y;
+  }
+#else
+  return make_value_unknown_impl<std::is_constructible<T, const volatile T &>::value>::apply(x);
+#endif
 }
 
 // }}}
@@ -75,7 +97,7 @@ __declspec(noinline)
 #else
 [[gnu::noinline]]
 #endif
-auto noinline(F &&fun)
+auto noinline(F &&fun) -> decltype(fun())
 {
   return fun();
 }
