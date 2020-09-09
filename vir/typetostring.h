@@ -217,7 +217,8 @@ VIR_AUTO_OR_STRING typeToString_impl(Typelist<T0, Ts...> *)
 VIR_CONSTEXPR_STRING_RET(2) typeToString_impl(Typelist<> *) { return "{}"; }
 
 // Vc::simd to string {{{1
-#if defined VC_FWDDECL_H_ && defined Vc_VERSION_CHECK && Vc_VERSION_NUMBER >= Vc_VERSION_CHECK(1, 4, 0)
+#if defined VC_FWDDECL_H_ && defined Vc_VERSION_CHECK
+#if Vc_VERSION_NUMBER >= Vc_VERSION_CHECK(1, 4, 0)
 template <int N> VIR_AUTO_OR_STRING typeToString_impl(Vc::simd_abi::fixed_size<N> *)
 {
   return number_to_string(std::integral_constant<int, N>());
@@ -237,6 +238,7 @@ template <class T, class A> VIR_AUTO_OR_STRING typeToString_impl(Vc::simd_mask<T
   return cs("simd_mask<") + typeToStringRecurse<T>() + cs(", ") + typeToStringRecurse<A>() +
          cs('>');
 }
+#endif  // Vc >= 1.4.0
 #endif  // VC_FWDDECL_H_
 
 // generic fallback (typeid::name) {{{1
