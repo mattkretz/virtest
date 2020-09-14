@@ -554,7 +554,6 @@ public:
       , m_failed(
             !Traits::ulp_compare_and_log(Traits::ulp_distance(a, b), allowed_distance))
   {
-    using T = typename Traits::value_type;
     if (VIR_IS_UNLIKELY(m_failed)) {
       noinline([&]() {
         printFirst();
@@ -574,7 +573,7 @@ public:
         print("\ndistance: ");
         print(Traits::ulp_distance_signed(a, b));
         print(" ulp, allowed distance: ±");
-        print(global_unit_test_object_.fuzzyness<T>());
+        print(allowed_distance);
         print(" ulp");
         print(' ');
       });
